@@ -1,0 +1,1618 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EcoPilot – Diagnostic Déchets & RSE pour PME</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400&family=Syne:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#1c2818;--bg2:#202e1c;--surface:#243020;--surface2:#2c3a24;--surface3:#34442c;
+  --green:#a8c85a;--green-dim:#90b040;--green-glow:rgba(168,200,90,0.18);--green-subtle:rgba(168,200,90,0.09);
+  --gold:#e8a858;--red:#d06050;--blue:#70a898;
+  --text:#f0e8d0;--text-dim:#a0b888;--text-muted:#607050;
+  --border:rgba(168,200,90,0.18);--border-bright:rgba(168,200,90,0.45);
+  --leaf1:#78aa38;--leaf2:#a8c85a;--moss:#243020;
+  --cream:#f0e8d0;--amber:#e8a858;
+}
+html{scroll-behavior:smooth}
+body{font-family:'Syne',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;-webkit-text-size-adjust:100%}
+#bgCanvas{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:0;opacity:0.7}
+body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse 80% 60% at 15% 25%,rgba(50,90,20,0.22),transparent),radial-gradient(ellipse 60% 80% at 85% 75%,rgba(40,70,15,0.16),transparent),radial-gradient(ellipse 40% 40% at 50% 10%,rgba(168,200,90,0.05),transparent);pointer-events:none;z-index:1}
+.app{position:relative;z-index:2;min-height:100vh}
+
+/* HEADER */
+.hdr{position:fixed;top:0;left:0;right:0;z-index:200;padding:18px 48px;display:flex;align-items:center;justify-content:space-between;background:linear-gradient(to bottom,rgba(28,40,24,0.97),transparent);backdrop-filter:blur(16px)}
+.logo{font-family:'Playfair Display',serif;font-size:24px;font-weight:900;color:var(--text);cursor:pointer}
+.logo em{font-style:italic;color:var(--green)}
+.logo-sub{font-size:9px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:var(--text-muted);margin-top:2px}
+.hdr-nav{display:flex;align-items:center;gap:8px}
+.hdr-link{padding:8px 16px;border-radius:50px;font-size:13px;font-weight:600;color:var(--text-dim);cursor:pointer;transition:all 0.2s;background:none;border:none;font-family:'Syne',sans-serif}
+.hdr-link:hover{color:var(--text);background:var(--green-subtle)}
+.hdr-cta{padding:9px 20px;border-radius:50px;font-size:13px;font-weight:700;color:var(--bg);background:var(--green);border:none;cursor:pointer;transition:all 0.2s;font-family:'Syne',sans-serif}
+.hdr-cta:hover{box-shadow:0 4px 20px rgba(0,200,90,0.4);transform:translateY(-1px)}
+.pulse-dot{width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 8px rgba(168,200,90,0.7);animation:pulse 2s infinite;display:inline-block;margin-right:8px}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:0.4;transform:scale(0.7)}}
+
+/* PROGRESS */
+.prog-wrap{position:fixed;top:0;left:0;right:0;z-index:201;height:3px}
+.prog-line{height:100%;background:linear-gradient(90deg,#78aa38,#a8c85a,#e8a858);transition:width 0.5s cubic-bezier(0.4,0,0.2,1);box-shadow:0 0 6px rgba(168,200,90,0.35)}
+
+/* PAGES */
+.page{display:none;min-height:100vh;padding:110px 0 80px;animation:fadeUp 0.45s ease both}
+#page-landing{min-height:auto}
+.page.active{display:block}
+@keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+.container{max-width:760px;margin:0 auto;padding:0 32px}
+.container-wide{max-width:1100px;margin:0 auto;padding:0 32px}
+
+/* ANIM */
+.a1{animation:fadeUp 0.5s 0s ease both}
+.a2{animation:fadeUp 0.5s 0.08s ease both}
+.a3{animation:fadeUp 0.5s 0.16s ease both}
+.a4{animation:fadeUp 0.5s 0.24s ease both}
+.a5{animation:fadeUp 0.5s 0.32s ease both}
+.a6{animation:fadeUp 0.5s 0.4s ease both}
+
+/* ═══ LANDING PAGE ═══ */
+.hero{text-align:center;padding:40px 0 60px}
+.eyebrow{display:inline-flex;align-items:center;gap:10px;padding:7px 18px;border:1px solid var(--border-bright);border-radius:50px;font-size:11px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;color:var(--green);background:var(--green-subtle);margin-bottom:28px}
+.hero-title{font-family:'Playfair Display',serif;font-size:clamp(44px,6.5vw,76px);font-weight:900;line-height:1.04;letter-spacing:-2.5px;margin-bottom:24px}
+.hero-title .hl{font-style:italic;color:var(--green)}
+.hero-sub{font-size:18px;color:var(--text-dim);line-height:1.7;max-width:540px;margin:0 auto 48px}
+.stats-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1px;border:1px solid var(--border);border-radius:20px;overflow:hidden;background:var(--border);margin-bottom:48px}
+.stat-b{background:var(--surface);padding:26px 28px;transition:background 0.3s}
+.stat-b:hover{background:var(--surface2)}
+.stat-n{font-family:'Playfair Display',serif;font-size:38px;font-weight:900;color:var(--green);line-height:1;margin-bottom:6px}
+.stat-l{font-size:12px;color:var(--text-dim);font-weight:500;letter-spacing:0.5px}
+.btn-big{display:inline-flex;align-items:center;gap:14px;padding:18px 44px;background:var(--green);color:var(--bg);border:none;border-radius:50px;font-family:'Syne',sans-serif;font-size:16px;font-weight:800;cursor:pointer;transition:all 0.3s;position:relative;overflow:hidden}
+.btn-big::after{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(255,255,255,0.12),transparent);opacity:0;transition:opacity 0.3s}
+.btn-big:hover{transform:translateY(-3px);box-shadow:0 18px 50px rgba(0,200,90,0.4)}
+.btn-big:hover::after{opacity:1}
+.features-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-top:72px}
+.feat{background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:28px 24px;transition:all 0.3s;cursor:default}
+.feat:hover{border-color:var(--border-bright);background:var(--surface2);transform:translateY(-4px);box-shadow:0 12px 40px rgba(0,200,90,0.08)}
+.feat-icon{font-size:32px;margin-bottom:16px}
+.feat-title{font-size:15px;font-weight:700;color:var(--text);margin-bottom:8px}
+.feat-desc{font-size:13px;color:var(--text-dim);line-height:1.6}
+
+/* ═══ DIAGNOSTIC ═══ */
+.steps-track{display:flex;align-items:center;margin-bottom:44px}
+.step-item{display:flex;align-items:center;flex:1}
+.step-item:last-child{flex:0}
+.step-c{width:34px;height:34px;border-radius:50%;border:2px solid var(--text-muted);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:var(--text-muted);flex-shrink:0;transition:all 0.4s}
+.step-c.on{border-color:var(--green);color:var(--green);box-shadow:0 0 18px rgba(0,200,90,0.3)}
+.step-c.done{background:var(--green);border-color:var(--green);color:var(--bg)}
+.step-l{flex:1;height:1px;background:var(--border);transition:background 0.4s;margin:0 6px}
+.step-l.done{background:var(--green)}
+.q-cat{display:flex;align-items:center;gap:8px;font-size:10px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:var(--text-muted);margin-bottom:14px}
+.q-cat-n{width:26px;height:26px;border-radius:50%;border:1px solid var(--border-bright);display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--green)}
+.q-title{font-family:'Playfair Display',serif;font-size:clamp(26px,4vw,40px);font-weight:700;line-height:1.2;letter-spacing:-1px;color:var(--text);margin-bottom:12px}
+.q-hint{font-size:13px;color:var(--text-dim);line-height:1.6;margin-bottom:36px;padding-left:14px;border-left:2px solid var(--border-bright)}
+.opts{display:flex;flex-direction:column;gap:10px}
+.opt{display:flex;align-items:center;gap:18px;padding:17px 22px;border:1px solid var(--border);border-radius:14px;background:var(--surface);cursor:pointer;transition:all 0.25s;position:relative;overflow:hidden}
+.opt::before{content:'';position:absolute;left:0;top:0;bottom:0;width:0;background:linear-gradient(90deg,rgba(0,200,90,0.12),transparent);transition:width 0.4s}
+.opt:hover{border-color:var(--border-bright);transform:translateX(5px);background:var(--surface2)}
+.opt:hover::before{width:70%}
+.opt.sel{border-color:var(--green);background:var(--surface2);box-shadow:0 0 0 1px var(--green),0 4px 24px rgba(0,200,90,0.1)}
+.opt.sel::before{width:100%}
+.opt-ic{font-size:24px;min-width:38px;text-align:center;position:relative;z-index:1}
+.opt-bd{flex:1;position:relative;z-index:1}
+.opt-t{font-size:15px;font-weight:700;color:var(--text);margin-bottom:2px}
+.opt-d{font-size:12px;color:var(--text-dim)}
+.opt-r{width:22px;height:22px;border-radius:50%;border:2px solid var(--text-muted);display:flex;align-items:center;justify-content:center;transition:all 0.25s;flex-shrink:0;position:relative;z-index:1}
+.opt.sel .opt-r{border-color:var(--green);background:var(--green);box-shadow:0 0 14px rgba(0,200,90,0.5)}
+.opt-rd{width:8px;height:8px;border-radius:50%;background:var(--bg);opacity:0;transition:opacity 0.2s}
+.opt.sel .opt-rd{opacity:1}
+.checks{display:flex;flex-direction:column;gap:8px}
+.chk{display:flex;align-items:center;gap:14px;padding:13px 18px;border:1px solid var(--border);border-radius:12px;background:var(--surface);cursor:pointer;transition:all 0.2s;font-size:14px;font-weight:500}
+.chk:hover{border-color:var(--border-bright);background:var(--surface2)}
+.chk.on{border-color:var(--green);background:var(--surface2)}
+.chk-b{width:20px;height:20px;border-radius:5px;border:2px solid var(--text-muted);display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--bg);transition:all 0.2s;flex-shrink:0}
+.chk.on .chk-b{background:var(--green);border-color:var(--green);box-shadow:0 0 10px rgba(0,200,90,0.4)}
+.nav-row{display:flex;justify-content:space-between;align-items:center;margin-top:32px;padding-top:24px;border-top:1px solid var(--border)}
+.btn-back{display:flex;align-items:center;gap:8px;padding:12px 22px;border:1px solid var(--border);border-radius:50px;background:transparent;color:var(--text-dim);font-family:'Syne',sans-serif;font-size:13px;font-weight:600;cursor:pointer;transition:all 0.2s}
+.btn-back:hover{border-color:var(--border-bright);color:var(--text)}
+.btn-next{display:flex;align-items:center;gap:10px;padding:13px 30px;background:var(--green);color:var(--bg);border:none;border-radius:50px;font-family:'Syne',sans-serif;font-size:14px;font-weight:800;cursor:pointer;transition:all 0.3s}
+.btn-next:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(58,158,95,0.3)}
+.btn-next:disabled{background:var(--surface2);color:var(--text-muted);cursor:not-allowed;transform:none;box-shadow:none}
+.slider-wrap{margin-bottom:12px}
+input[type=range]{-webkit-appearance:none;width:100%;height:6px;border-radius:3px;background:var(--surface2);outline:none;cursor:pointer;border:1px solid var(--border)}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;height:22px;border-radius:50%;background:var(--green);cursor:pointer;box-shadow:0 0 14px rgba(0,200,90,0.5);border:2px solid var(--bg)}
+.slider-labels{display:flex;justify-content:space-between;font-size:11px;color:var(--text-muted);margin-top:8px}
+.slider-val{font-family:'Playfair Display',serif;font-size:28px;font-weight:900;color:var(--green);text-align:center;margin-bottom:6px}
+.slider-unit{font-size:12px;color:var(--text-muted);text-align:center}
+.num-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+
+/* ═══ RESULTS ═══ */
+.res-header{text-align:center;padding:10px 0 40px}
+.res-score-row{display:grid;grid-template-columns:200px 1fr;gap:24px;margin-bottom:28px;align-items:center}
+.ring-wrap{position:relative;width:180px;height:180px}
+.ring-wrap svg{position:absolute;top:0;left:0;transform:rotate(-90deg)}
+.ring-center{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center}
+.ring-val{font-family:'Playfair Display',serif;font-size:52px;font-weight:900;color:var(--green);line-height:1}
+.ring-sub{font-size:13px;color:var(--text-muted);font-weight:500}
+.ring-verdict{font-family:'Playfair Display',serif;font-size:22px;font-style:italic;color:var(--text);margin-bottom:12px}
+.ring-desc{font-size:14px;color:var(--text-dim);line-height:1.65}
+.kpi-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:28px}
+.kpi-c{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:18px 20px;display:flex;align-items:center;gap:14px;transition:all 0.3s}
+.kpi-c:hover{border-color:var(--border-bright);background:var(--surface2)}
+.kpi-ic{font-size:22px;min-width:34px}
+.kpi-bd{flex:1}
+.kpi-lbl{font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--text-muted)}
+.kpi-val{font-family:'Playfair Display',serif;font-size:22px;font-weight:700;color:var(--text);margin-top:2px}
+.badge{font-size:10px;font-weight:700;padding:3px 10px;border-radius:50px}
+.b-red{background:rgba(224,85,85,0.12);color:var(--red);border:1px solid rgba(224,85,85,0.2)}
+.b-gold{background:rgba(201,168,76,0.12);color:var(--gold);border:1px solid rgba(201,168,76,0.2)}
+.b-green{background:rgba(0,200,90,0.1);color:var(--green);border:1px solid rgba(0,200,90,0.2)}
+.b-blue{background:rgba(74,158,255,0.1);color:var(--blue);border:1px solid rgba(74,158,255,0.2)}
+.sec-div{display:flex;align-items:center;gap:14px;font-size:10px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;color:var(--text-muted);margin:28px 0 16px}
+.sec-div::before,.sec-div::after{content:'';flex:1;height:1px;background:var(--border)}
+.compliance-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:28px}
+.comp-c{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;text-align:center;transition:all 0.3s}
+.comp-c:hover{background:var(--surface2)}
+.comp-icon{font-size:24px;margin-bottom:8px}
+.comp-name{font-size:11px;font-weight:700;color:var(--text-dim);margin-bottom:6px;letter-spacing:0.5px}
+.comp-status{font-size:12px;font-weight:700}
+.comp-ok{color:var(--green)}
+.comp-ko{color:var(--red)}
+.comp-mid{color:var(--gold)}
+.actions-list{display:flex;flex-direction:column;gap:10px;margin-bottom:28px}
+.act{display:flex;align-items:flex-start;gap:14px;padding:16px 20px;border-radius:14px;border:1px solid var(--border);background:var(--surface);transition:all 0.25s}
+.act:hover{border-color:var(--border-bright);background:var(--surface2);transform:translateX(4px)}
+.act.a-red{border-left:3px solid var(--red)}
+.act.a-gold{border-left:3px solid var(--gold)}
+.act.a-green{border-left:3px solid var(--green)}
+.act-num{width:28px;height:28px;border-radius:50%;border:1px solid var(--border-bright);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:var(--green);flex-shrink:0;margin-top:2px}
+.act-b{flex:1}
+.act-t{font-size:14px;font-weight:700;color:var(--text);margin-bottom:4px}
+.act-d{font-size:12px;color:var(--text-dim);line-height:1.5;margin-bottom:6px}
+.act-tag{font-size:10px;font-weight:700;padding:2px 9px;border-radius:50px;display:inline-block}
+.tag-u{background:rgba(224,85,85,0.12);color:var(--red);border:1px solid rgba(224,85,85,0.2)}
+.tag-p{background:rgba(201,168,76,0.12);color:var(--gold);border:1px solid rgba(201,168,76,0.2)}
+.tag-w{background:rgba(0,200,90,0.1);color:var(--green);border:1px solid rgba(0,200,90,0.2)}
+.chart-bar{height:8px;border-radius:4px;background:var(--surface2);overflow:hidden;margin-top:6px}
+.chart-fill{height:100%;border-radius:4px;background:linear-gradient(90deg,var(--green),var(--gold));transition:width 1s 0.5s ease}
+.radar-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:16px}
+.radar-item{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px;text-align:center}
+.radar-name{font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text-muted);margin-bottom:8px}
+.radar-score{font-family:'Playfair Display',serif;font-size:24px;font-weight:900;margin-bottom:4px}
+.radar-bar{height:4px;border-radius:2px;background:var(--surface2);overflow:hidden}
+.radar-fill{height:100%;border-radius:2px;transition:width 1.2s ease}
+.cta-box{background:linear-gradient(135deg,#243020,#2c3a20);border:1px solid var(--border-bright);border-radius:24px;padding:44px;text-align:center;position:relative;overflow:hidden;margin-top:8px}
+.cta-box::before{content:'';position:absolute;width:400px;height:400px;border-radius:50%;background:radial-gradient(circle,rgba(0,200,90,0.07),transparent 70%);top:-150px;right:-150px;pointer-events:none}
+.cta-box::after{content:'';position:absolute;width:300px;height:300px;border-radius:50%;background:radial-gradient(circle,rgba(201,168,76,0.05),transparent 70%);bottom:-100px;left:-100px;pointer-events:none}
+.cta-box h3{font-family:'Playfair Display',serif;font-size:30px;font-weight:900;color:var(--text);margin-bottom:10px;position:relative;z-index:1}
+.cta-box h3 em{font-style:italic;color:var(--green)}
+.cta-box p{font-size:14px;color:var(--text-dim);line-height:1.7;max-width:500px;margin:0 auto 28px;position:relative;z-index:1}
+.btn-cta{display:inline-flex;align-items:center;gap:12px;padding:16px 42px;background:var(--green);color:var(--bg);border:none;border-radius:50px;font-family:'Syne',sans-serif;font-size:15px;font-weight:800;cursor:pointer;transition:all 0.3s;position:relative;z-index:1}
+.btn-cta:hover{transform:translateY(-3px);box-shadow:0 16px 40px rgba(0,200,90,0.4)}
+.btn-outline{display:inline-flex;align-items:center;gap:8px;padding:12px 26px;border:1px solid var(--border-bright);border-radius:50px;background:transparent;color:var(--text-dim);font-family:'Syne',sans-serif;font-size:13px;font-weight:600;cursor:pointer;transition:all 0.2s;margin-top:14px;position:relative;z-index:1}
+.btn-outline:hover{color:var(--text);border-color:var(--green)}
+
+/* ═══ FREE TRIAL PAGE ═══ */
+.trial-grid{display:grid;grid-template-columns:1fr 1fr;gap:32px;align-items:start}
+.trial-left h2{font-family:'Playfair Display',serif;font-size:38px;font-weight:900;line-height:1.15;letter-spacing:-1px;margin-bottom:16px}
+.trial-left h2 em{font-style:italic;color:var(--green)}
+.trial-left p{font-size:15px;color:var(--text-dim);line-height:1.7;margin-bottom:32px}
+.plan-cards{display:flex;flex-direction:column;gap:12px;margin-bottom:28px}
+.plan{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:22px 24px;cursor:pointer;transition:all 0.25s}
+.plan:hover{border-color:var(--border-bright);background:var(--surface2)}
+.plan.best{border-color:var(--green);background:var(--surface2);position:relative}
+.plan-best-tag{position:absolute;top:-10px;left:20px;background:var(--green);color:var(--bg);font-size:10px;font-weight:800;padding:3px 12px;border-radius:50px;letter-spacing:1px;text-transform:uppercase}
+.plan-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.plan-name{font-size:15px;font-weight:800;color:var(--text)}
+.plan-price{font-family:'Playfair Display',serif;font-size:22px;font-weight:900;color:var(--green)}
+.plan-price span{font-size:13px;color:var(--text-dim);font-family:'Syne',sans-serif;font-weight:500}
+.plan-desc{font-size:12px;color:var(--text-dim);margin-bottom:10px}
+.plan-features{display:flex;flex-direction:column;gap:5px}
+.plan-feat{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text-dim)}
+.plan-feat::before{content:'✓';color:var(--green);font-weight:800;font-size:11px;flex-shrink:0}
+.trial-form{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:32px}
+.form-title{font-family:'Playfair Display',serif;font-size:22px;font-weight:700;margin-bottom:24px;color:var(--text)}
+.form-group{margin-bottom:18px}
+.form-label{font-size:12px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text-muted);margin-bottom:8px;display:block}
+.form-input{width:100%;padding:13px 16px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;color:var(--text);font-family:'Syne',sans-serif;font-size:14px;outline:none;transition:border-color 0.2s}
+.form-input:focus{border-color:var(--green);box-shadow:0 0 0 3px rgba(0,200,90,0.08)}
+.form-input::placeholder{color:var(--text-muted)}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.btn-form{width:100%;padding:15px;background:var(--green);color:var(--bg);border:none;border-radius:12px;font-family:'Syne',sans-serif;font-size:15px;font-weight:800;cursor:pointer;transition:all 0.3s;margin-top:8px}
+.btn-form:hover{box-shadow:0 8px 30px rgba(0,200,90,0.35);transform:translateY(-2px)}
+.form-note{font-size:11px;color:var(--text-muted);text-align:center;margin-top:12px;line-height:1.5}
+.trust-row{display:flex;align-items:center;justify-content:center;gap:24px;margin-top:32px}
+.trust-item{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text-muted)}
+.trust-item::before{content:'✓';color:var(--green);font-weight:800}
+
+/* ═══ DASHBOARD PREVIEW ═══ */
+.dash-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:32px}
+.dash-title{font-family:'Playfair Display',serif;font-size:32px;font-weight:900;letter-spacing:-0.5px}
+.dash-title em{font-style:italic;color:var(--green)}
+.dash-badge{padding:7px 16px;border:1px solid var(--border-bright);border-radius:50px;font-size:12px;color:var(--green);font-weight:600;display:flex;align-items:center;gap:8px}
+.dash-grid{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:14px;margin-bottom:24px}
+.dash-kpi{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:20px;transition:all 0.3s}
+.dash-kpi:hover{border-color:var(--border-bright);background:var(--surface2)}
+.dk-icon{font-size:20px;margin-bottom:10px}
+.dk-label{font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--text-muted);margin-bottom:6px}
+.dk-val{font-family:'Playfair Display',serif;font-size:26px;font-weight:900;color:var(--text)}
+.dk-trend{font-size:11px;margin-top:4px}
+.trend-up{color:var(--green)}
+.trend-down{color:var(--red)}
+.dash-row{display:grid;grid-template-columns:2fr 1fr;gap:14px;margin-bottom:24px}
+.dash-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:24px;transition:all 0.3s}
+.dash-card:hover{border-color:var(--border-bright)}
+.card-title{font-size:13px;font-weight:700;letter-spacing:0.5px;color:var(--text-dim);margin-bottom:20px;text-transform:uppercase;letter-spacing:1.5px;font-size:10px}
+.month-bars{display:flex;align-items:flex-end;gap:8px;height:80px}
+.m-bar{flex:1;border-radius:4px 4px 0 0;background:linear-gradient(to top,var(--green-dim),var(--green));transition:all 0.3s;cursor:pointer;position:relative}
+.m-bar:hover{background:linear-gradient(to top,var(--green),#00ff70);box-shadow:0 -4px 16px rgba(0,200,90,0.3)}
+.m-bar::after{content:attr(data-label);position:absolute;bottom:-18px;left:50%;transform:translateX(-50%);font-size:9px;color:var(--text-muted);white-space:nowrap}
+.flux-list{display:flex;flex-direction:column;gap:8px}
+.flux-item{display:flex;align-items:center;gap:10px;font-size:13px}
+.flux-name{flex:1;color:var(--text-dim)}
+.flux-pct{font-size:12px;font-weight:700;color:var(--text);min-width:36px;text-align:right}
+.flux-bar-wrap{flex:2;height:4px;background:var(--surface2);border-radius:2px;overflow:hidden}
+.flux-bar-fill{height:100%;border-radius:2px;background:linear-gradient(90deg,var(--green),var(--gold))}
+.alert-list{display:flex;flex-direction:column;gap:8px}
+.alert-item{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:10px;font-size:12px;border:1px solid}
+.alert-u{background:rgba(224,85,85,0.06);border-color:rgba(224,85,85,0.2);color:#e07070}
+.alert-g{background:rgba(0,200,90,0.06);border-color:rgba(0,200,90,0.15);color:var(--green)}
+.alert-y{background:rgba(201,168,76,0.06);border-color:rgba(201,168,76,0.2);color:var(--gold)}
+.demo-banner{background:linear-gradient(135deg,rgba(0,200,90,0.08),rgba(201,168,76,0.05));border:1px solid var(--border-bright);border-radius:16px;padding:20px 24px;display:flex;align-items:center;justify-content:space-between;margin-bottom:24px}
+.demo-text{font-size:14px;color:var(--text-dim)}<br>.demo-text strong{color:var(--text)}
+.btn-sm{padding:9px 20px;background:var(--green);color:var(--bg);border:none;border-radius:50px;font-family:'Syne',sans-serif;font-size:12px;font-weight:800;cursor:pointer;transition:all 0.2s;white-space:nowrap}
+.btn-sm:hover{box-shadow:0 4px 16px rgba(0,200,90,0.35)}
+
+/* SUCCESS */
+.success-page{text-align:center;padding:60px 0}
+.success-icon{width:90px;height:90px;border-radius:50%;background:var(--green-subtle);border:2px solid var(--border-bright);display:flex;align-items:center;justify-content:center;font-size:40px;margin:0 auto 28px;box-shadow:0 0 40px rgba(0,200,90,0.2)}
+.success-title{font-family:'Playfair Display',serif;font-size:38px;font-weight:900;margin-bottom:14px}
+.success-title em{font-style:italic;color:var(--green)}
+.success-sub{font-size:16px;color:var(--text-dim);line-height:1.7;max-width:480px;margin:0 auto 40px}
+.next-steps{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:36px}
+.ns{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:22px 18px;text-align:center}
+.ns-num{font-family:'Playfair Display',serif;font-size:32px;font-weight:900;color:var(--green);margin-bottom:8px}
+.ns-t{font-size:13px;font-weight:700;color:var(--text);margin-bottom:4px}
+.ns-d{font-size:12px;color:var(--text-dim)}
+
+/* ═══════════════════════════
+   MOBILE RESPONSIVE
+═══════════════════════════ */
+@media (max-width:768px){
+  /* Header */
+  .hdr{padding:14px 20px}
+  .logo-sub{display:none}
+  .hdr-nav .hdr-link{display:none}
+  .hdr-cta{padding:8px 16px;font-size:12px}
+
+  /* Landing split -> stacked */
+  #page-landing{height:auto !important;overflow:visible !important}
+  .landing-split{grid-template-columns:1fr !important;min-height:auto !important;display:flex !important;flex-direction:column !important;height:auto !important}
+  .landing-left{padding:88px 22px 24px !important;order:1;width:100%}
+  .landing-right{height:250px !important;min-height:250px;max-height:250px;order:2;margin:0 16px 0 !important;border-radius:16px;overflow:hidden;border:1px solid var(--border);width:calc(100% - 32px);flex-shrink:0 !important;position:relative !important}
+  .hero-h1{font-size:clamp(32px,8vw,48px);letter-spacing:-1.5px}
+  .hero-p{font-size:14px;margin-bottom:28px}
+  .hero-btns{flex-direction:column;align-items:stretch;gap:10px}
+  .btn-hero,.btn-hero-ghost{justify-content:center;width:100%}
+  .hero-trust{flex-wrap:wrap;gap:12px;justify-content:center}
+  .hero-divider{display:none}
+  .stats-strip{grid-template-columns:1fr 1fr 1fr}
+  .ss-n{font-size:24px}
+  .ss-l{font-size:10px}
+
+  /* Float badges on mobile — hide 2 keep 1 */
+  .float-badge.fb2,.float-badge.fb3{display:none}
+  .float-badge.fb1{top:12px;left:12px;padding:8px 12px}
+  .fb-val{font-size:18px}
+
+  /* Features */
+  .features-section{padding:36px 16px !important;display:block !important;width:100% !important;overflow:visible !important}
+  .features-grid2{grid-template-columns:1fr 1fr;gap:12px}
+  .features-header h2{font-size:24px;letter-spacing:-0.5px}
+
+  /* Diagnostic pages */
+  .page{padding:80px 0 60px}
+  .container{padding:0 20px}
+  .container-wide{padding:0 16px}
+  .q-title{font-size:clamp(22px,6vw,32px)}
+  .steps-track{margin-bottom:28px}
+  .step-c{width:28px;height:28px;font-size:10px}
+  .step-l{margin:0 3px}
+
+  /* Options full width */
+  .opt{padding:14px 16px;gap:12px}
+  .opt-ic{font-size:20px;min-width:30px}
+  .opt-t{font-size:14px}
+
+  /* Results */
+  .res-score-row{grid-template-columns:1fr;text-align:center}
+  .ring-wrap{margin:0 auto 20px}
+  .kpi-grid{grid-template-columns:1fr 1fr}
+  .compliance-grid{grid-template-columns:1fr 1fr}
+  .radar-grid{grid-template-columns:1fr 1fr}
+
+  /* Dashboard */
+  .dash-grid{grid-template-columns:1fr 1fr}
+  .dash-row{grid-template-columns:1fr}
+  .dash-header{flex-direction:column;align-items:flex-start;gap:10px}
+  .dash-title{font-size:24px}
+  .demo-banner{flex-direction:column;gap:14px;text-align:center}
+
+  /* Trial */
+  .trial-grid{grid-template-columns:1fr}
+  .form-row{grid-template-columns:1fr}
+  .trial-left h2{font-size:28px}
+  .trust-row{flex-wrap:wrap;gap:12px;justify-content:center}
+
+  /* Success */
+  .next-steps{grid-template-columns:1fr}
+  .success-title{font-size:28px}
+
+  /* CTA box */
+  .cta-box{padding:28px 20px}
+  .cta-box h3{font-size:22px}
+  .btn-cta{width:100%;justify-content:center;padding:14px 24px}
+  .btn-outline{width:100%;justify-content:center}
+
+  /* Nav row */
+  .nav-row{gap:10px}
+  .btn-next{padding:12px 22px;font-size:13px}
+  .btn-back{padding:10px 16px;font-size:12px}
+
+  /* Cursor — hide on touch */
+  #cursor,#cursor-ring{display:none}
+
+  /* Scroll indicator */
+  .scroll-ind{display:none}
+  /* Fix page min-height */
+  .page{min-height:auto !important}
+  #page-landing{padding-bottom:40px}
+}
+@media (max-width:420px){
+  .kpi-grid{grid-template-columns:1fr}
+  .compliance-grid{grid-template-columns:1fr 1fr}
+  .radar-grid{grid-template-columns:1fr 1fr}
+  .dash-grid{grid-template-columns:1fr 1fr}
+  .features-grid2{grid-template-columns:1fr}
+  .hero-eyebrow{font-size:9px;letter-spacing:1.5px;padding:6px 14px}
+  .hdr-cta{display:none}
+}
+
+@media(max-width:768px){
+  #menuBtn{display:flex !important}
+  #hdrNav{display:none}
+}
+</style>
+</head>
+<body>
+<canvas id="bgCanvas"></canvas>
+<div class="app">
+
+<!-- PROGRESS -->
+<div class="prog-wrap"><div class="prog-line" id="progLine" style="width:0%"></div></div>
+
+<!-- HEADER -->
+<div class="hdr">
+  <div>
+    <div class="logo" onclick="showPage('landing')">Eco<em>Pilot</em></div>
+    <div class="logo-sub">Diagnostic RSE · Déchets PME</div>
+  </div>
+  <div class="hdr-nav" id="hdrNav">
+    <button class="hdr-link" onclick="showPage('landing')">Accueil</button>
+    <button class="hdr-link" onclick="showPage('diag',1)">Diagnostic</button>
+    <button class="hdr-link" onclick="showPage('dashboard')">Tableau de bord</button>
+    <button class="hdr-cta" onclick="showPage('trial')">Essai gratuit</button>
+  </div>
+  <button id="menuBtn" onclick="toggleMenu()" style="display:none;background:none;border:1px solid var(--border);border-radius:8px;padding:8px 10px;color:var(--text);font-size:18px;cursor:pointer">☰</button>
+</div>
+<div id="mobileMenu" style="display:none;position:fixed;top:65px;left:0;right:0;z-index:199;background:rgba(14,26,15,0.97);backdrop-filter:blur(16px);border-bottom:1px solid var(--border);padding:12px 20px;flex-direction:column;gap:4px">
+  <button class="hdr-link" style="text-align:left;width:100%;padding:12px 16px" onclick="showPage('landing');toggleMenu()">🏠 Accueil</button>
+  <button class="hdr-link" style="text-align:left;width:100%;padding:12px 16px" onclick="showPage('diag',1);toggleMenu()">🎯 Diagnostic</button>
+  <button class="hdr-link" style="text-align:left;width:100%;padding:12px 16px" onclick="showPage('dashboard');toggleMenu()">📊 Tableau de bord</button>
+  <button class="hdr-link" style="text-align:left;width:100%;padding:12px 16px;color:var(--green);font-weight:700" onclick="showPage('trial');toggleMenu()">✨ Essai gratuit</button>
+</div>
+
+<!-- ══════════════════════════════════════════
+     PAGE : LANDING
+══════════════════════════════════════════ -->
+<style>
+/* ── CURSOR ── */
+#cursor{position:fixed;width:12px;height:12px;border-radius:50%;background:var(--green);pointer-events:none;z-index:9999;transform:translate(-50%,-50%);transition:transform .1s,width .3s,height .3s,opacity .3s;box-shadow:0 0 16px rgba(0,200,90,0.8);mix-blend-mode:screen}
+#cursor-ring{position:fixed;width:40px;height:40px;border-radius:50%;border:1.5px solid rgba(0,200,90,0.4);pointer-events:none;z-index:9998;transform:translate(-50%,-50%);transition:left .12s ease,top .12s ease,width .3s,height .3s,opacity .3s}
+body:has(#page-landing.active) #cursor{opacity:1}
+#cursor.hover-cta{width:60px;height:60px;background:rgba(0,200,90,0.15);border:1.5px solid var(--green)}
+#cursor-ring.hover-cta{width:80px;height:80px;border-color:rgba(0,200,90,0.6)}
+
+/* ── LANDING LAYOUT ── */
+#page-landing{padding:0;overflow:visible}
+.landing-split{display:grid;grid-template-columns:1fr 1fr;min-height:100vh;align-items:center}
+.landing-left{padding:140px 56px 80px 64px;display:flex;flex-direction:column;justify-content:center}
+.landing-right{position:relative;height:100vh;display:flex;align-items:center;justify-content:center;overflow:hidden}
+
+/* ── GLOBE CANVAS ── */
+#globeCanvas{position:absolute;inset:0;width:100%;height:100%}
+
+/* ── FLOATING BADGES ── */
+.float-badge{position:absolute;background:rgba(28,40,16,0.88);border:1px solid var(--border-bright);border-radius:14px;padding:12px 16px;backdrop-filter:blur(16px);z-index:10;animation:floatBadge 4s ease-in-out infinite}
+.float-badge.fb1{top:22%;left:2%;animation-delay:0s}
+.float-badge.fb2{top:55%;right:4%;animation-delay:1.3s}
+.float-badge.fb3{bottom:18%;left:8%;animation-delay:2.6s}
+@keyframes floatBadge{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+.fb-label{font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--text-muted);margin-bottom:5px}
+.fb-val{font-family:'Playfair Display',serif;font-size:22px;font-weight:900;color:var(--green)}
+.fb-sub{font-size:11px;color:var(--text-dim);margin-top:2px}
+.fb-trend{font-size:11px;color:var(--green);font-weight:700;margin-top:4px}
+
+/* ── SCROLL INDICATOR ── */
+.scroll-ind{position:absolute;bottom:32px;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:8px;opacity:0.4;animation:bounceY 2s ease-in-out infinite}
+@keyframes bounceY{0%,100%{transform:translateX(-50%) translateY(0)}50%{transform:translateX(-50%) translateY(8px)}}
+.scroll-line{width:1px;height:40px;background:linear-gradient(to bottom,var(--green),transparent)}
+.scroll-txt{font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--text-muted)}
+
+/* ── HERO TEXT ── */
+.hero-eyebrow{display:inline-flex;align-items:center;gap:10px;padding:7px 18px;border:1px solid var(--border-bright);border-radius:50px;font-size:11px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;color:var(--green);background:var(--green-subtle);margin-bottom:28px;opacity:0;animation:fadeUp .6s .1s ease forwards}
+.hero-h1{font-family:'Playfair Display',serif;font-size:clamp(40px,4.5vw,62px);font-weight:900;line-height:1.06;letter-spacing:-2px;margin-bottom:22px;opacity:0;animation:fadeUp .6s .2s ease forwards}
+.hero-h1 .hl{font-style:italic;color:var(--green);position:relative}
+.hero-h1 .hl::after{content:'';position:absolute;bottom:-3px;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--green),transparent)}
+.hero-p{font-size:16px;color:var(--text-dim);line-height:1.75;max-width:460px;margin-bottom:36px;opacity:0;animation:fadeUp .6s .3s ease forwards}
+.hero-btns{display:flex;align-items:center;gap:14px;margin-bottom:48px;opacity:0;animation:fadeUp .6s .4s ease forwards}
+.btn-hero{display:inline-flex;align-items:center;gap:12px;padding:16px 36px;background:var(--green);color:var(--bg);border:none;border-radius:50px;font-family:'Syne',sans-serif;font-size:15px;font-weight:800;cursor:pointer;transition:all .3s;position:relative;overflow:hidden}
+.btn-hero::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(255,255,255,.15),transparent);opacity:0;transition:opacity .3s}
+.btn-hero:hover{transform:translateY(-3px);box-shadow:0 12px 32px rgba(58,158,95,0.35)}
+.btn-hero:hover::before{opacity:1}
+.btn-hero-ghost{display:inline-flex;align-items:center;gap:8px;padding:15px 28px;border:1px solid var(--border-bright);border-radius:50px;background:transparent;color:var(--text-dim);font-family:'Syne',sans-serif;font-size:14px;font-weight:600;cursor:pointer;transition:all .3s}
+.btn-hero-ghost:hover{border-color:var(--green);color:var(--text)}
+.hero-trust{display:flex;align-items:center;gap:20px;opacity:0;animation:fadeUp .6s .5s ease forwards}
+.trust-item2{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--text-muted)}
+.trust-item2 span{color:var(--green);font-weight:800}
+.hero-divider{width:1px;height:14px;background:var(--border)}
+
+/* ── STATS STRIP ── */
+.stats-strip{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1px;background:var(--border);border:1px solid var(--border);border-radius:16px;overflow:hidden;margin-bottom:32px;opacity:0;animation:fadeUp .6s .35s ease forwards}
+.ss-block{background:var(--surface);padding:20px 24px;transition:background .3s}
+.ss-block:hover{background:var(--surface2)}
+.ss-n{font-family:'Playfair Display',serif;font-size:32px;font-weight:900;color:var(--green);line-height:1}
+.ss-l{font-size:11px;color:var(--text-dim);margin-top:4px;font-weight:500}
+
+/* ── FEATURES BELOW ── */
+.features-section{padding:80px 64px;background:linear-gradient(to bottom,transparent,rgba(28,40,16,0.7))}
+.features-header{text-align:center;margin-bottom:48px}
+.features-header h2{font-family:'Playfair Display',serif;font-size:36px;font-weight:900;letter-spacing:-1px;margin-bottom:10px}
+.features-header h2 em{font-style:italic;color:var(--green)}
+.features-header p{font-size:15px;color:var(--text-dim)}
+.features-grid2{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;max-width:1100px;margin:0 auto}
+.feat2{background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:28px 24px;transition:all .3s;cursor:default;position:relative;overflow:hidden}
+.feat2::before{content:'';position:absolute;bottom:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--green),var(--gold));transform:scaleX(0);transition:transform .4s;transform-origin:left}
+.feat2:hover{border-color:var(--border-bright);background:var(--surface2);transform:translateY(-5px);box-shadow:0 16px 40px rgba(0,200,90,.07)}
+.feat2:hover::before{transform:scaleX(1)}
+.feat2-icon{font-size:28px;margin-bottom:14px}
+.feat2-title{font-size:15px;font-weight:700;color:var(--text);margin-bottom:8px}
+.feat2-desc{font-size:13px;color:var(--text-dim);line-height:1.6}
+.feat2-tag{display:inline-block;margin-top:12px;font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--green);border:1px solid var(--border-bright);border-radius:50px;padding:3px 10px}
+</style>
+
+<!-- CUSTOM CURSOR -->
+<div id="cursor"></div>
+<div id="cursor-ring"></div>
+
+<div class="page active" id="page-landing">
+
+  <!-- HERO SPLIT -->
+  <div class="landing-split">
+
+    <!-- LEFT: TEXT -->
+    <div class="landing-left">
+      <div class="hero-eyebrow"><span class="pulse-dot"></span>Outil RSE pour PME françaises</div>
+      <h1 class="hero-h1">La gestion<br>des déchets<br>enfin <span class="hl">simple<br>& rentable</span></h1>
+      <p class="hero-p">EcoPilot aide les PME à gérer leurs déchets hors production, prouver leur conformité AGEC et valoriser leur démarche RSE — sans expert interne, sans complexité.</p>
+
+      <div class="stats-strip">
+        <div class="ss-block"><div class="ss-n">170k</div><div class="ss-l">PME françaises concernées</div></div>
+        <div class="ss-block"><div class="ss-n">5 min</div><div class="ss-l">pour votre diagnostic</div></div>
+        <div class="ss-block"><div class="ss-n">100%</div><div class="ss-l">gratuit sans inscription</div></div>
+      </div>
+
+      <div class="hero-btns">
+        <button class="btn-hero" onclick="showPage('diag',1)">Faire mon diagnostic <span style="font-size:16px">→</span></button>
+        <button class="btn-hero-ghost" onclick="showPage('dashboard')">Voir la démo</button>
+      </div>
+
+      <div class="hero-trust">
+        <div class="trust-item2"><span>✓</span> Sans inscription</div>
+        <div class="hero-divider"></div>
+        <div class="trust-item2"><span>✓</span> RGPD conforme</div>
+        <div class="hero-divider"></div>
+        <div class="trust-item2"><span>✓</span> Données sécurisées</div>
+      </div>
+    </div>
+
+    <!-- RIGHT: GLOBE -->
+    <div class="landing-right">
+      <canvas id="globeCanvas"></canvas>
+
+      <!-- Floating badges -->
+      <div class="float-badge fb1">
+        <div class="fb-label">Conformité AGEC</div>
+        <div class="fb-val">98%</div>
+        <div class="fb-sub">Taux moyen clients</div>
+        <div class="fb-trend">▲ +14% ce trimestre</div>
+      </div>
+      <div class="float-badge fb2">
+        <div class="fb-label">CO₂ économisé</div>
+        <div class="fb-val">2.4 t</div>
+        <div class="fb-sub">Par entreprise / an</div>
+        <div class="fb-trend">▲ Impact mesuré</div>
+      </div>
+      <div class="float-badge fb3">
+        <div class="fb-label">Score RSE moyen</div>
+        <div class="fb-val">74/100</div>
+        <div class="fb-sub">Après 3 mois EcoPilot</div>
+        <div class="fb-trend">▲ vs 31 avant</div>
+      </div>
+
+      <div class="scroll-ind">
+        <div class="scroll-txt">Défiler</div>
+        <div class="scroll-line"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FEATURES BELOW -->
+  <div class="features-section">
+    <div class="features-header">
+      <h2>Tout ce dont une PME a besoin<br>pour sa <em>gestion des déchets</em></h2>
+      <p>Une plateforme simple, complète et pensée pour les non-experts.</p>
+    </div>
+    <div class="features-grid2">
+      <div class="feat2"><div class="feat2-icon">🎯</div><div class="feat2-title">Diagnostic automatisé</div><div class="feat2-desc">8 questions ciblées pour évaluer votre conformité AGEC, ISO 14001 et VSME en quelques minutes.</div><div class="feat2-tag">Gratuit</div></div>
+      <div class="feat2"><div class="feat2-icon">📊</div><div class="feat2-title">Tableau de bord RSE</div><div class="feat2-desc">Suivez vos flux de déchets mois par mois, visualisez vos progrès et partagez vos résultats.</div><div class="feat2-tag">Pro</div></div>
+      <div class="feat2"><div class="feat2-icon">🚀</div><div class="feat2-title">Plan d'actions personnalisé</div><div class="feat2-desc">3 à 5 priorités concrètes, adaptées à votre secteur et votre taille, pour progresser rapidement.</div><div class="feat2-tag">Inclus</div></div>
+      <div class="feat2"><div class="feat2-icon">⚖️</div><div class="feat2-title">Conformité réglementaire</div><div class="feat2-desc">Vérifiez automatiquement vos obligations AGEC et obtenez les justificatifs nécessaires.</div><div class="feat2-tag">Pro</div></div>
+      <div class="feat2"><div class="feat2-icon">🌿</div><div class="feat2-title">Reporting VSME intégré</div><div class="feat2-desc">Générez automatiquement les indicateurs déchets pour votre déclaration VSME / CSRD simplifiée.</div><div class="feat2-tag">Pro</div></div>
+      <div class="feat2"><div class="feat2-icon">👥</div><div class="feat2-title">Engagement des équipes</div><div class="feat2-desc">Tableaux de bord simples pour impliquer vos collaborateurs et rendre le tri motivant au quotidien.</div><div class="feat2-tag">Pro</div></div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ══════════════════════════
+// NATURE CANVAS — CREAM MEADOW TREE
+// ══════════════════════════════════
+(function(){
+  const cv = document.getElementById('globeCanvas');
+  if(!cv) return;
+  const ctx = cv.getContext('2d');
+  let W, H, t = 0;
+  let mouseX = 0.5, mouseY = 0.5, targetMX = 0.5, targetMY = 0.5;
+
+  function resize(){
+    const rect = cv.parentElement.getBoundingClientRect();
+    W = cv.width = rect.width;
+    H = cv.height = rect.height;
+  }
+  resize();
+  window.addEventListener('resize', resize);
+  cv.parentElement.addEventListener('mousemove', e => {
+    const rect = cv.getBoundingClientRect();
+    targetMX = (e.clientX - rect.left) / W;
+    targetMY = (e.clientY - rect.top) / H;
+  });
+
+  // ── PALETTE CREAM MEADOW ──
+  const LEAF_COLORS = [
+    [120,185,45], [140,200,55], [100,165,35],
+    [160,210,70], [90,150,30],  [170,205,80],
+    [108,172,40], [148,195,62]
+  ];
+  const TRUNK_LIGHT = '#6a4f2a';
+  const TRUNK_MID   = '#8a6535';
+  const TRUNK_DARK  = '#4a3218';
+  const BRANCH_COL  = '#7a5828';
+
+  // ── LEAVES : 3 clusters (left, center, right) ──
+  const leaves = [];
+  const clusters = [
+    {cx:0.38, cy:0.28, rx:0.18, ry:0.20, count:55},
+    {cx:0.50, cy:0.22, rx:0.20, ry:0.22, count:70},
+    {cx:0.62, cy:0.30, rx:0.16, ry:0.18, count:45},
+  ];
+  clusters.forEach(cl => {
+    for(let i = 0; i < cl.count; i++){
+      const a = Math.random() * Math.PI * 2;
+      const r = Math.pow(Math.random(), 0.55); // denser center
+      const col = LEAF_COLORS[Math.floor(Math.random() * LEAF_COLORS.length)];
+      leaves.push({
+        cx: cl.cx + Math.cos(a) * r * cl.rx,
+        cy: cl.cy + Math.sin(a) * r * cl.ry,
+        size: Math.random() * 10 + 5,
+        rot: Math.random() * Math.PI * 2,
+        rotSpeed: (Math.random() - 0.5) * 0.006,
+        sway: Math.random() * 0.012 + 0.004,
+        swayOff: Math.random() * Math.PI * 2,
+        swaySpeed: Math.random() * 0.008 + 0.004,
+        col,
+        alpha: Math.random() * 0.35 + 0.55,
+        layer: Math.random(),
+        highlight: Math.random() > 0.65, // some leaves catch light
+      });
+    }
+  });
+
+  // ── FLOATING SEEDS / POLLEN ──
+  const seeds = [];
+  for(let i = 0; i < 22; i++){
+    seeds.push({
+      x: Math.random(), y: Math.random() * 0.9,
+      vx: Math.random() * 0.0006 + 0.00015,
+      vy: (Math.random() - 0.5) * 0.00025,
+      ph: Math.random() * Math.PI * 2,
+      swayA: Math.random() * 6 + 3,
+      r: Math.random() * 1.8 + 0.8,
+      type: Math.random() > 0.5 ? 'pollen' : 'seed',
+    });
+  }
+
+  // ── GRASS ──
+  const grass = [];
+  for(let i = 0; i < 55; i++){
+    grass.push({
+      x: Math.random(), baseH: Math.random() * 0.055 + 0.018,
+      lean: (Math.random() - 0.5) * 0.25,
+      w: Math.random() * 2.2 + 1,
+      alpha: Math.random() * 0.45 + 0.3,
+      col: Math.random() > 0.5 ? [110,170,42] : [88,148,30],
+    });
+  }
+
+  // ── SMALL FLOWERS in grass ──
+  const flowers = [];
+  for(let i = 0; i < 12; i++){
+    flowers.push({
+      x: Math.random(), y: 0,
+      size: Math.random() * 4 + 3,
+      col: [[240,210,80],[240,160,80],[255,200,100],[200,230,100]][Math.floor(Math.random()*4)],
+      ph: Math.random() * Math.PI * 2,
+    });
+  }
+
+  // ── DRAW LEAF ──
+  function drawLeaf(x, y, size, rot, col, a, highlight){
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate(rot);
+    ctx.globalAlpha = a;
+    // Base fill
+    ctx.fillStyle = `rgb(${col[0]},${col[1]},${col[2]})`;
+    ctx.beginPath();
+    ctx.moveTo(0, -size);
+    ctx.bezierCurveTo(size*0.75, -size*0.45, size*0.75, size*0.45, 0, size);
+    ctx.bezierCurveTo(-size*0.75, size*0.45, -size*0.75, -size*0.45, 0, -size);
+    ctx.fill();
+    // Light shimmer on some leaves
+    if(highlight){
+      ctx.globalAlpha = a * 0.3;
+      ctx.fillStyle = `rgb(${Math.min(col[0]+60,255)},${Math.min(col[1]+55,255)},${Math.min(col[2]+40,255)})`;
+      ctx.beginPath();
+      ctx.moveTo(-size*0.15, -size*0.7);
+      ctx.bezierCurveTo(size*0.3, -size*0.4, size*0.25, 0, 0, size*0.2);
+      ctx.bezierCurveTo(-size*0.3, 0, -size*0.35, -size*0.4, -size*0.15, -size*0.7);
+      ctx.fill();
+    }
+    // Vein
+    ctx.globalAlpha = a * 0.18;
+    ctx.strokeStyle = `rgb(${col[0]+30},${Math.min(col[1]+60,255)},${col[2]})`;
+    ctx.lineWidth = 0.6;
+    ctx.beginPath();
+    ctx.moveTo(0, -size * 0.75); ctx.lineTo(0, size * 0.75);
+    ctx.moveTo(0, -size*0.1); ctx.lineTo(size*0.45, size*0.2);
+    ctx.moveTo(0, -size*0.1); ctx.lineTo(-size*0.45, size*0.2);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  // ── DRAW TRUNK WITH BARK TEXTURE ──
+  function drawTrunk(tx, ty, trunkH, wind){
+    // Root spread
+    ctx.save();
+    ctx.globalAlpha = 0.5;
+    const rg = ctx.createRadialGradient(tx, ty, 0, tx, ty, 36);
+    rg.addColorStop(0, 'rgba(60,40,15,0.6)');
+    rg.addColorStop(1, 'transparent');
+    ctx.fillStyle = rg;
+    ctx.beginPath(); ctx.ellipse(tx, ty+2, 36, 10, 0, 0, Math.PI*2); ctx.fill();
+    ctx.restore();
+
+    // Trunk silhouette
+    const tg = ctx.createLinearGradient(tx-22, 0, tx+22, 0);
+    tg.addColorStop(0,   TRUNK_DARK);
+    tg.addColorStop(0.3, TRUNK_LIGHT);
+    tg.addColorStop(0.55,TRUNK_MID);
+    tg.addColorStop(1,   TRUNK_DARK);
+    ctx.fillStyle = tg;
+    ctx.beginPath();
+    ctx.moveTo(tx-20, ty);
+    ctx.bezierCurveTo(tx-15+wind*8, ty-trunkH*0.35, tx-8+wind*12, ty-trunkH*0.75, tx-5+wind*14, ty-trunkH);
+    ctx.lineTo(tx+5+wind*14, ty-trunkH);
+    ctx.bezierCurveTo(tx+8+wind*12, ty-trunkH*0.75, tx+15+wind*8, ty-trunkH*0.35, tx+20, ty);
+    ctx.closePath();
+    ctx.fill();
+
+    // Bark lines
+    ctx.save();
+    ctx.globalAlpha = 0.18;
+    ctx.strokeStyle = TRUNK_DARK;
+    ctx.lineWidth = 1.2;
+    for(let i = 0; i < 5; i++){
+      const yOff = trunkH * (0.2 + i * 0.15);
+      const xOff = (Math.random()-0.5)*4;
+      ctx.beginPath();
+      ctx.moveTo(tx - 10 + xOff, ty - yOff);
+      ctx.bezierCurveTo(tx - 4 + xOff, ty - yOff - 6, tx + 4 + xOff, ty - yOff + 4, tx + 10 + xOff, ty - yOff - 2);
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  // ── DRAW BRANCH ──
+  function drawBranch(tx, ty, trunkH, b, wind){
+    const w2 = wind * b.windMult;
+    ctx.strokeStyle = BRANCH_COL;
+    ctx.lineWidth = b.w;
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(tx + b.sx, ty - trunkH * b.sy);
+    ctx.bezierCurveTo(
+      tx + W * b.c1x + w2 * W * 0.012, ty - trunkH * b.c1y,
+      tx + W * b.c2x + w2 * W * 0.018, ty - trunkH * b.c2y,
+      tx + W * b.ex  + w2 * W * 0.022, ty - trunkH * b.ey
+    );
+    ctx.stroke();
+    // Twig
+    if(b.tw){
+      ctx.lineWidth = Math.max(1, b.w * 0.45);
+      ctx.beginPath();
+      ctx.moveTo(tx + W*b.ex + w2*W*0.022, ty - trunkH*b.ey);
+      ctx.lineTo(tx + W*(b.ex+b.tw.dx) + w2*W*0.025, ty - trunkH*(b.ey+b.tw.dy));
+      ctx.stroke();
+    }
+  }
+
+  const BRANCHES = [
+    {sx:-5, sy:0.52, c1x:-0.09, c1y:0.64, c2x:-0.20, c2y:0.60, ex:-0.28, ey:0.50, w:7,  windMult:1,   tw:{dx:-0.05,dy:0.08}},
+    {sx: 5, sy:0.48, c1x: 0.10, c1y:0.60, c2x: 0.21, c2y:0.56, ex: 0.30, ey:0.46, w:6.5,windMult:1.1, tw:{dx:0.04,dy:0.09}},
+    {sx:-4, sy:0.70, c1x:-0.07, c1y:0.82, c2x:-0.14, c2y:0.82, ex:-0.20, ey:0.74, w:5,  windMult:0.9, tw:{dx:-0.04,dy:0.07}},
+    {sx: 4, sy:0.74, c1x: 0.08, c1y:0.85, c2x: 0.15, c2y:0.85, ex: 0.22, ey:0.76, w:4.5,windMult:1.2, tw:{dx:0.05,dy:0.06}},
+    {sx:-3, sy:0.88, c1x:-0.05, c1y:0.96, c2x:-0.09, c2y:0.96, ex:-0.13, ey:0.89, w:3,  windMult:0.8, tw:null},
+    {sx: 3, sy:0.90, c1x: 0.05, c1y:0.97, c2x: 0.10, c2y:0.97, ex: 0.14, ey:0.90, w:3,  windMult:1.3, tw:null},
+  ];
+
+  function draw(){
+    mouseX += (targetMX - mouseX) * 0.04;
+    mouseY += (targetMY - mouseY) * 0.04;
+
+    ctx.clearRect(0, 0, W, H);
+
+    const groundY = H * 0.76;
+    const wind = Math.sin(t * 0.008) * 0.6 + Math.sin(t * 0.013) * 0.3; // gentle dual wind
+
+    // ── AMBIENT LIGHT from top-right (sun) ──
+    const sunX = W * (0.75 + (mouseX-0.5)*0.06);
+    const sunY = H * 0.08;
+    const sunGlow = ctx.createRadialGradient(sunX, sunY, 0, sunX, sunY, H * 0.55);
+    sunGlow.addColorStop(0, 'rgba(240,220,140,0.10)');
+    sunGlow.addColorStop(0.4,'rgba(200,220,100,0.05)');
+    sunGlow.addColorStop(1, 'transparent');
+    ctx.fillStyle = sunGlow;
+    ctx.fillRect(0, 0, W, H);
+
+    // ── LIGHT RAYS (god rays) ──
+    ctx.save();
+    for(let i = 0; i < 5; i++){
+      const angle = 0.25 + i * 0.12 + Math.sin(t * 0.004) * 0.03;
+      const lx = sunX - 10 + i * 14;
+      const grad = ctx.createLinearGradient(lx, 0, lx + Math.sin(angle)*H*0.9, H*0.9);
+      grad.addColorStop(0, 'rgba(240,230,150,0.07)');
+      grad.addColorStop(1, 'transparent');
+      ctx.fillStyle = grad;
+      ctx.globalAlpha = 0.8;
+      ctx.beginPath();
+      ctx.moveTo(lx - 4, 0);
+      ctx.lineTo(lx + 4, 0);
+      ctx.lineTo(lx + 4 + Math.sin(angle)*H*0.9, H*0.9);
+      ctx.lineTo(lx - 4 + Math.sin(angle)*H*0.9, H*0.9);
+      ctx.closePath();
+      ctx.fill();
+    }
+    ctx.restore();
+
+    // ── GROUND ──
+    const grd = ctx.createLinearGradient(0, groundY, 0, H);
+    grd.addColorStop(0, 'rgba(55,85,20,0.85)');
+    grd.addColorStop(0.4,'rgba(40,68,15,0.9)');
+    grd.addColorStop(1, 'rgba(22,40,10,1)');
+    ctx.fillStyle = grd;
+    ctx.beginPath();
+    ctx.moveTo(0, groundY + H*0.015);
+    ctx.bezierCurveTo(W*0.25, groundY - H*0.018, W*0.6, groundY + H*0.012, W, groundY + H*0.005);
+    ctx.lineTo(W, H); ctx.lineTo(0, H);
+    ctx.closePath();
+    ctx.fill();
+
+    // Ground highlight edge
+    ctx.save();
+    ctx.globalAlpha = 0.25;
+    ctx.strokeStyle = 'rgba(140,190,60,0.6)';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(0, groundY + H*0.015);
+    ctx.bezierCurveTo(W*0.25, groundY - H*0.018, W*0.6, groundY + H*0.012, W, groundY + H*0.005);
+    ctx.stroke();
+    ctx.restore();
+
+    // ── GRASS BLADES ──
+    grass.forEach(g => {
+      const gx = g.x * W;
+      const gy = groundY + 4;
+      const wnd = Math.sin(t * 0.018 + g.x * 9) * 0.18 * wind;
+      const lean = g.lean + wnd;
+      ctx.save();
+      ctx.globalAlpha = g.alpha;
+      const gc = g.col;
+      ctx.strokeStyle = `rgb(${gc[0]},${gc[1]},${gc[2]})`;
+      ctx.lineWidth = g.w;
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      ctx.moveTo(gx, gy);
+      ctx.bezierCurveTo(
+        gx + lean*W*0.03, gy - H*g.baseH*0.5,
+        gx + lean*W*0.055, gy - H*g.baseH*0.8,
+        gx + lean*W*0.07, gy - H*g.baseH
+      );
+      ctx.stroke();
+      ctx.restore();
+    });
+
+    // ── FLOWERS ──
+    flowers.forEach(fl => {
+      fl.ph += 0.012;
+      const fx = fl.x * W;
+      const fy = groundY - fl.size * 1.2 + Math.sin(fl.ph) * 1.5;
+      ctx.save();
+      ctx.globalAlpha = 0.7;
+      // Stem
+      ctx.strokeStyle = 'rgba(80,140,30,0.8)';
+      ctx.lineWidth = 1.2;
+      ctx.beginPath();
+      ctx.moveTo(fx, groundY + 2);
+      ctx.lineTo(fx, fy + fl.size * 0.5);
+      ctx.stroke();
+      // Petals
+      for(let p = 0; p < 5; p++){
+        const pa = (p/5)*Math.PI*2 + fl.ph*0.1;
+        ctx.fillStyle = `rgb(${fl.col[0]},${fl.col[1]},${fl.col[2]})`;
+        ctx.beginPath();
+        ctx.ellipse(fx + Math.cos(pa)*fl.size*0.7, fy + Math.sin(pa)*fl.size*0.7, fl.size*0.5, fl.size*0.35, pa, 0, Math.PI*2);
+        ctx.fill();
+      }
+      // Center
+      ctx.fillStyle = 'rgba(255,230,80,0.9)';
+      ctx.beginPath(); ctx.arc(fx, fy, fl.size*0.35, 0, Math.PI*2); ctx.fill();
+      ctx.restore();
+    });
+
+    // ── TREE TRUNK + BRANCHES ──
+    const tx = W * (0.5 + (mouseX-0.5)*0.015);
+    const ty = groundY + 2;
+    const trunkH = H * 0.40;
+
+    BRANCHES.forEach(b => drawBranch(tx, ty, trunkH, b, wind));
+    drawTrunk(tx, ty, trunkH, wind * 0.008);
+
+    // ── LEAVES (back to front) ──
+    const windOff = (mouseX - 0.5) * 0.02;
+    const windOffY = (mouseY - 0.5) * 0.01;
+    const sorted = [...leaves].sort((a,b) => a.layer - b.layer);
+    sorted.forEach(l => {
+      const sw = Math.sin(t * l.swaySpeed + l.swayOff) * l.sway * wind;
+      const sy = Math.sin(t * l.swaySpeed * 0.6 + l.swayOff + 1) * l.sway * 0.4;
+      l.rot += l.rotSpeed * (0.5 + Math.abs(wind)*0.8);
+      drawLeaf(
+        W  * (l.cx + sw + windOff),
+        H  * (l.cy + sy + windOffY),
+        l.size, l.rot, l.col, l.alpha, l.highlight
+      );
+    });
+
+    // ── CANOPY WARMTH GLOW ──
+    const cx2 = W*0.5 + windOff*W, cy2 = H*0.26;
+    const cg = ctx.createRadialGradient(cx2, cy2, 0, cx2, cy2, W*0.32);
+    cg.addColorStop(0,  'rgba(168,210,60,0.07)');
+    cg.addColorStop(0.5,'rgba(200,230,80,0.03)');
+    cg.addColorStop(1,  'transparent');
+    ctx.fillStyle = cg;
+    ctx.beginPath(); ctx.arc(cx2, cy2, W*0.32, 0, Math.PI*2); ctx.fill();
+
+    // ── SEEDS / POLLEN ──
+    seeds.forEach(s => {
+      s.x += s.vx;
+      s.y += s.vy;
+      s.ph += 0.018;
+      if(s.x > 1.08) s.x = -0.04;
+      if(s.y < 0 || s.y > 1) s.vy *= -1;
+      const sx2 = s.x*W, sy2 = s.y*H + Math.sin(s.ph) * s.swayA;
+      ctx.save();
+      if(s.type === 'pollen'){
+        const pg = ctx.createRadialGradient(sx2,sy2,0,sx2,sy2,s.r*3.5);
+        pg.addColorStop(0,'rgba(220,240,100,0.75)');
+        pg.addColorStop(0.5,'rgba(180,220,70,0.25)');
+        pg.addColorStop(1,'transparent');
+        ctx.fillStyle = pg;
+        ctx.beginPath(); ctx.arc(sx2,sy2,s.r*3.5,0,Math.PI*2); ctx.fill();
+      } else {
+        // Seed : small elongated dot with tail
+        ctx.globalAlpha = 0.55;
+        ctx.fillStyle = 'rgba(200,230,90,0.8)';
+        ctx.beginPath();
+        ctx.ellipse(sx2, sy2, s.r*0.5, s.r*1.8, Math.atan2(s.vy, s.vx)+Math.PI/2, 0, Math.PI*2);
+        ctx.fill();
+        // Hair
+        ctx.strokeStyle = 'rgba(200,230,90,0.4)';
+        ctx.lineWidth = 0.6;
+        for(let h = 0; h < 3; h++){
+          ctx.beginPath();
+          ctx.moveTo(sx2, sy2 - s.r*1.5);
+          ctx.lineTo(sx2 + (h-1)*s.r*1.5, sy2 - s.r*4);
+          ctx.stroke();
+        }
+      }
+      ctx.restore();
+    });
+
+    t++;
+    requestAnimationFrame(draw);
+  }
+  draw();
+})();
+
+// ══════════════════════════
+// CUSTOM CURSOR
+// ══════════════════════════
+(function(){
+  const cur = document.getElementById('cursor');
+  const ring = document.getElementById('cursor-ring');
+  let mx=0,my=0,rx=0,ry=0;
+  document.addEventListener('mousemove', e=>{
+    mx=e.clientX; my=e.clientY;
+    cur.style.left=mx+'px'; cur.style.top=my+'px';
+  });
+  function animRing(){
+    rx+=(mx-rx)*.12; ry+=(my-ry)*.12;
+    ring.style.left=rx+'px'; ring.style.top=ry+'px';
+    requestAnimationFrame(animRing);
+  }
+  animRing();
+  document.querySelectorAll('.btn-hero,.btn-hero-ghost,.hdr-cta,.btn-big').forEach(el=>{
+    el.addEventListener('mouseenter',()=>{cur.classList.add('hover-cta');ring.classList.add('hover-cta')});
+    el.addEventListener('mouseleave',()=>{cur.classList.remove('hover-cta');ring.classList.remove('hover-cta')});
+  });
+})();
+</script>
+
+<!-- ══════════════════════════════════════════
+     PAGES DIAGNOSTIC 1-8
+══════════════════════════════════════════ -->
+
+<!-- Q1 : Taille -->
+<div class="page" id="page-diag-1">
+  <div class="container">
+    <div class="steps-track a1" id="stepsTrack"></div>
+    <div class="q-cat a1"><div class="q-cat-n">01</div>Profil entreprise</div>
+    <h2 class="q-title a2">Quelle est la taille<br>de votre entreprise ?</h2>
+    <p class="q-hint a3">Détermine vos obligations réglementaires (seuils AGEC, obligations VSME) et le volume estimé de vos déchets.</p>
+    <div class="opts a4">
+      <div class="opt" onclick="pick(this,'size','micro')"><span class="opt-ic">🏠</span><span class="opt-bd"><div class="opt-t">Moins de 10 salariés</div><div class="opt-d">TPE / micro-entreprise — obligations de base</div></span><span class="opt-r"><span class="opt-rd"></span></span></div>
+      <div class="opt" onclick="pick(this,'size','small')"><span class="opt-ic">🏢</span><span class="opt-bd"><div class="opt-t">10 à 49 salariés</div><div class="opt-d">Petite entreprise — tri 7 flux obligatoire</div></span><span class="opt-r"><span class="opt-rd"></span></span></div>
+      <div class="opt" onclick="pick(this,'size','medium')"><span class="opt-ic">🏗️</span><span class="opt-bd"><div class="opt-t">50 à 249 salariés</div><div class="opt-d">Moyenne entreprise — reporting VSME recommandé</div></span><span class="opt-r"><span class="opt-rd"></span></span></div>
+      <div class="opt" onclick="pick(this,'size','large')"><span class="opt-ic">🏭</span><span class="opt-bd"><div class="opt-t">250 salariés et plus</div><div class="opt-d">ETI — CSRD applicable ou en préparation</div></span><span class="opt-r"><span class="opt-rd"></span></span></div>
+    </div>
+    <div class="nav-row a5"><button class="btn-back" onclick="showPage('landing')">← Accueil</button><button class="btn-next" id="n1" disabled onclick="showPage('diag',2)">Continuer →</button></div>
+  </div>
+</div>
+
+<!-- Q2 : Secteur -->
+<div class="page" id="page-diag-2">
+  <div class="container">
+    <div class="steps-track a1" id="st2"></div>
+    <div class="q-cat a1"><div class="q-cat-n">02</div>Secteur d'activité</div>
+    <h2 class="q-title a2">Dans quel secteur<br>exercez-vous ?</h2>
+    <p class="q-hint a3">Chaque secteur a des types de déchets dominants et des réglementations spécifiques. Cela personnalise votre diagnostic.</p>
+    <div class="opts a4">
+      <div class="opt" onclick="pick(this,'sector','services')"><span class="opt-ic">💼</span><span class="opt-bd"><div class="opt-t">Services / Tertiaire</div><div class="opt-d">Bureaux, conseil, finance, assurance, RH</div></span><span class="opt-r"><span class="opt-rd"></span></span></div>
+      <div class="opt" onclick="pick(this,'sector','commerce')"><span class="opt-ic">🛒</span><span class="opt-bd"><div class="opt-t">Commerce / Distribution</div><div class="opt-d">Vente, grande distribution, e-commerce, artisanat</div></span><span class="opt-r"><span class="opt-rd"></span></span></div>
+      <div class="opt" onclick="pick(this,'sector','industry')"><span class="opt-ic">⚙️</span><span class="opt-bd"><div class="opt-t">Industrie / Logistique</div><div class="opt-d">Fabrication, atelier, entrepôt, transport</div></span><span class="opt-r"><span class="opt-rd"></span></span></div>
+      <div class="opt" onclick="pick(this,'sector','btp')"><span class="opt-ic">🔨</span><span class="opt-bd"><div class="opt-t">BTP / Chantiers</div><div class="opt-d">Construction, travaux, installations, maintenance</div></span><span class="opt-r"><span class="opt-rd"></span></span></div>
+      <div class="opt" onclick="pick(this,'sector','food')"><span class="opt-ic">🍽️</span><span class="opt-bd"><div class="opt-t">Restauration / Alimentaire</div><div class="opt-d">Restaurant, traiteur, boulangerie, agro-alimentaire</div></span><span class="opt-r"><span class="opt-rd"></span></span></div>
+    </div>
+    <div class="nav-row a5"><button class="btn-back" onclick="showPage('diag',1)">← Retour</button><button class="btn-next" id="n2" disabled onclick="showPage('diag',3)">Continuer →</button></div>
+  </div>
+</div>
+
+<!-- Q3 : Environnement -->
+<div class="page" id="page-diag-3">
+  <div class="container">
+    <div class="steps-track a1" id="st3"></div>
+    <div class="q-cat a1"><div class="q-cat-n">03</div>Environnement de travail</div>
+    <h2 class="q-title a2">Où travaillent<br>principalement vos équipes ?</h2>
+    <p class="q-hint a3">L'environnement détermine les types de déchets produits et les contraintes ergonomiques de collecte.</p>
+    <div class="opts a4">
+      <div class="opt" onclick="pick(this,'env','office')"><span class="opt-ic">💡</span><span class="opt-bd"><div class="opt-t">Bureaux / open space uniquement</div><div class="opt-d">Papier, consommables, restauration, DEEE</div></span><span class="opt-r"><span class="opt-rd"></span></span></div>
+      <div class="opt" onclick="pick(this,'env','mixed')"><span class="opt-ic">🔄</span><span class="opt-bd"><div class="opt-t">Bureaux + atelier ou entrepôt</div><div class="opt-d">Flux mixtes : emballages, palettes, consommables</div></span><span class="opt-r"><span class="opt-rd"></span></span></div>
+      <div class="opt" onclick="pick(this,'env','site')"><span class="opt-ic">🌐</span><span class="opt-bd"><div class="opt-t">Multisites / chantiers itinérants</div><div class="opt-d">Contextes variables, gestion décentralisée</div></span><span class="opt-r"><span class="opt-rd"></span></span></div>
+    </div>
+    <div class="nav-row a5"><button class="btn-back" onclick="showPage('diag',2)">← Retour</button><button class="btn-next" id="n3" disabled onclick="showPage('diag',4)">Continuer →</button></div>
+  </div>
+</div>
+
+<!-- Q4 : Volume estimé -->
+<div class="page" id="page-diag-4">
+  <div class="container">
+    <div class="steps-track a1" id="st4"></div>
+    <div class="q-cat a1"><div class="q-cat-n">04</div>Volume de déchets</div>
+    <h2 class="q-title a2">Estimez votre production<br>de déchets hebdomadaire</h2>
+    <p class="q-hint a3">Déchets hors production uniquement : papier, emballages, biodéchets, consommables. Pas les déchets industriels.</p>
+    <div class="a4">
+      <div class="slider-val" id="volDisplay">200</div>
+      <div class="slider-unit">litres / semaine</div>
+      <div style="margin:20px 0 8px">
+        <input type="range" min="20" max="2000" value="200" step="10" id="volSlider" oninput="updateVol(this.value)">
+        <div class="slider-labels"><span>20L (1 poubelle)</span><span>500L</span><span>1000L</span><span>2000L+</span></div>
+      </div>
+      <div style="margin-top:24px;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px 20px">
+        <div style="font-size:12px;color:var(--text-muted);margin-bottom:6px">⚡ Information réglementaire</div>
+        <div id="volInfo" style="font-size:13px;color:var(--text-dim);line-height:1.6"></div>
+      </div>
+    </div>
+    <div class="nav-row a5"><button class="btn-back" onclick="showPage('diag',3)">← Retour</button><button class="btn-next" onclick="showPage('diag',5)">Continuer →</button></div>
+  </div>
+</div>
+
+<!-- Q5 : Flux triés -->
+<div class="page" id="page-diag-5">
+  <div class="container">
+    <div class="steps-track a1" id="st5"></div>
+    <div class="q-cat a1"><div class="q-cat-n">05</div>Pratiques de tri</div>
+    <h2 class="q-title a2">Quels flux triez-vous<br>actuellement ?</h2>
+    <p class="q-hint a3">Sélectionnez les flux collectés de façon distincte et régulière. La loi AGEC en impose 7 minimum.</p>
+    <div class="checks a4" id="fluxChecks">
+      <div class="chk" onclick="tog(this,'paper')"><span class="chk-b">✓</span>📄 Papier / carton <span style="margin-left:auto;font-size:10px;color:var(--text-muted)">Obligatoire</span></div>
+      <div class="chk" onclick="tog(this,'plastic')"><span class="chk-b">✓</span>🥤 Plastiques <span style="margin-left:auto;font-size:10px;color:var(--text-muted)">Obligatoire</span></div>
+      <div class="chk" onclick="tog(this,'bio')"><span class="chk-b">✓</span>🥗 Biodéchets alimentaires <span style="margin-left:auto;font-size:10px;color:var(--red)">Obligatoire depuis 2024</span></div>
+      <div class="chk" onclick="tog(this,'glass')"><span class="chk-b">✓</span>🍶 Verre <span style="margin-left:auto;font-size:10px;color:var(--text-muted)">Obligatoire</span></div>
+      <div class="chk" onclick="tog(this,'metal')"><span class="chk-b">✓</span>🥫 Métal / canettes <span style="margin-left:auto;font-size:10px;color:var(--text-muted)">Obligatoire</span></div>
+      <div class="chk" onclick="tog(this,'wood')"><span class="chk-b">✓</span>🪵 Bois / palettes <span style="margin-left:auto;font-size:10px;color:var(--text-muted)">Obligatoire</span></div>
+      <div class="chk" onclick="tog(this,'it')"><span class="chk-b">✓</span>💻 DEEE (informatique, électronique) <span style="margin-left:auto;font-size:10px;color:var(--gold)">Recommandé</span></div>
+      <div class="chk" onclick="tog(this,'textile')"><span class="chk-b">✓</span>👕 Textiles professionnels <span style="margin-left:auto;font-size:10px;color:var(--gold)">Nouveau 2025</span></div>
+      <div class="chk" onclick="tog(this,'none')"><span class="chk-b">✓</span>❌ Aucun tri structuré actuellement</div>
+    </div>
+    <div class="nav-row a5"><button class="btn-back" onclick="showPage('diag',4)">← Retour</button><button class="btn-next" onclick="showPage('diag',6)">Continuer →</button></div>
+  </div>
+</div>
+
+<!-- Q6 : Organisation -->
+<div class="page" id="page-diag-6">
+  <div class="container">
+    <div class="steps-track a1" id="st6"></div>
+    <div class="q-cat a1"><div class="q-cat-n">06</div>Organisation interne</div>
+    <h2 class="q-title a2">Comment est organisée<br>votre gestion des déchets ?</h2>
+    <p class="q-hint a3">Le niveau d'organisation détermine votre maturité RSE et les efforts à fournir pour vous conformer.</p>
+    <div class="opts a4">
+      <div class="opt" onclick="pick(this,'org','none')"><span class="opt-ic">😶</span><span class="opt-bd"><div class="opt-t">Aucune organisation formelle</div><div class="opt-d">Tout part dans la benne générale, pas de prestataire dédié</div></span><span class="opt-r"><span class="opt-rd"></span></span></div>
+      <div class="opt" onclick="pick(this,'org','basic')"><span class="opt-ic">🗑️</span><span class="opt-bd"><div class="opt-t">Poubelles séparées, sans suivi</div><div class="opt-d">Tri visible mais non mesuré, pas de données disponibles</div></span><span class="opt-r"><span class="opt-rd"></span></span></div>
+      <div class="opt" onclick="pick(this,'org','collect')"><span class="opt-ic">🚛</span><span class="opt-bd"><div class="opt-t">Prestataire de collecte contractualisé</div><div class="opt-d">Enlèvements réguliers, attestations partielles, peu de données</div></span><span class="opt-r"><span class="opt-rd"></span></span></div>
+      <div class="opt" onclick="pick(this,'org','structured')"><span class="opt-ic">📊</span><span class="opt-bd"><div class="opt-t">Gestion structurée avec suivi</div><div class="opt-d">Registre tenu, indicateurs suivis, responsable identifié, reporting existant</div></span><span class="opt-r"><span class="opt-rd"></span></span></div>
+    </div>
+    <div class="nav-row a5"><button class="btn-back" onclick="showPage('diag',5)">← Retour</button><button class="btn-next" id="n6" disabled onclick="showPage('diag',7)">Continuer →</button></div>
+  </div>
+</div>
+
+<!-- Q7 : Freins -->
+<div class="page" id="page-diag-7">
+  <div class="container">
+    <div class="steps-track a1" id="st7"></div>
+    <div class="q-cat a1"><div class="q-cat-n">07</div>Difficultés rencontrées</div>
+    <h2 class="q-title a2">Quels sont vos principaux<br>freins au tri ?</h2>
+    <p class="q-hint a3">Sélectionnez tous ceux qui s'appliquent. Cela nous permet de cibler les recommandations les plus utiles.</p>
+    <div class="checks a4" id="freinChecks">
+      <div class="chk" onclick="tog(this,'time')"><span class="chk-b">✓</span>⏰ Manque de temps pour organiser le tri</div>
+      <div class="chk" onclick="tog(this,'knowledge')"><span class="chk-b">✓</span>📚 Méconnaissance des obligations réglementaires</div>
+      <div class="chk" onclick="tog(this,'engagement')"><span class="chk-b">✓</span>👥 Difficultés à engager les équipes au quotidien</div>
+      <div class="chk" onclick="tog(this,'prestataire')"><span class="chk-b">✓</span>🚛 Difficultés à trouver / gérer les prestataires</div>
+      <div class="chk" onclick="tog(this,'budget')"><span class="chk-b">✓</span>💰 Contraintes budgétaires</div>
+      <div class="chk" onclick="tog(this,'tracking')"><span class="chk-b">✓</span>📉 Pas d'outil pour mesurer et suivre les résultats</div>
+      <div class="chk" onclick="tog(this,'complexity')"><span class="chk-b">✓</span>🤔 Trop de règles / trop complexe à mettre en place</div>
+    </div>
+    <div class="nav-row a5"><button class="btn-back" onclick="showPage('diag',6)">← Retour</button><button class="btn-next" onclick="showPage('diag',8)">Continuer →</button></div>
+  </div>
+</div>
+
+<!-- Q8 : Objectifs RSE -->
+<div class="page" id="page-diag-8">
+  <div class="container">
+    <div class="steps-track a1" id="st8"></div>
+    <div class="q-cat a1"><div class="q-cat-n">08</div>Ambition RSE</div>
+    <h2 class="q-title a2">Quel est votre objectif<br>principal en matière de RSE ?</h2>
+    <p class="q-hint a3">Votre ambition détermine le niveau de recommandations et le plan d'actions qui vous sera proposé.</p>
+    <div class="opts a4">
+      <div class="opt" onclick="pick(this,'goal','comply')"><span class="opt-ic">⚖️</span><span class="opt-bd"><div class="opt-t">Être en conformité réglementaire</div><div class="opt-d">Respecter la loi AGEC, éviter les sanctions et pénalités</div></span><span class="opt-r"><span class="opt-rd"></span></span></div>
+      <div class="opt" onclick="pick(this,'goal','image')"><span class="opt-ic">🌟</span><span class="opt-bd"><div class="opt-t">Valoriser notre image auprès des clients</div><div class="opt-d">Répondre aux appels d'offres, rassurer les donneurs d'ordre</div></span><span class="opt-r"><span class="opt-rd"></span></span></div>
+      <div class="opt" onclick="pick(this,'goal','cost')"><span class="opt-ic">💰</span><span class="opt-bd"><div class="opt-t">Réduire nos coûts liés aux déchets</div><div class="opt-d">Optimiser les prestataires, valoriser les flux, réduire les volumes</div></span><span class="opt-r"><span class="opt-rd"></span></span></div>
+      <div class="opt" onclick="pick(this,'goal','leader')"><span class="opt-ic">🚀</span><span class="opt-bd"><div class="opt-t">Devenir un acteur RSE de référence</div><div class="opt-d">Certification ISO 14001, reporting VSME, économie circulaire</div></span><span class="opt-r"><span class="opt-rd"></span></span></div>
+    </div>
+    <div class="nav-row a5"><button class="btn-back" onclick="showPage('diag',7)">← Retour</button><button class="btn-next" id="n8" disabled onclick="showPage('results')">Voir mes résultats →</button></div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     PAGE : RÉSULTATS
+══════════════════════════════════════════ -->
+<div class="page" id="page-results">
+  <div class="container">
+    <div class="res-header a1">
+      <div class="eyebrow" style="margin:0 auto 16px">✦ &nbsp;Diagnostic personnalisé</div>
+      <h2 class="q-title" id="resHeadTitle" style="text-align:center;margin-bottom:8px"></h2>
+    </div>
+
+    <div class="res-score-row a2">
+      <div class="ring-wrap">
+        <svg width="180" height="180" viewBox="0 0 180 180">
+          <circle cx="90" cy="90" r="72" fill="none" stroke="rgba(0,200,90,0.08)" stroke-width="12"/>
+          <circle cx="90" cy="90" r="72" fill="none" stroke="url(#sg)" stroke-width="12" stroke-linecap="round" stroke-dasharray="452.4" id="scoreArc" stroke-dashoffset="452.4"/>
+          <defs><linearGradient id="sg" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stop-color="#a8c85a"/><stop offset="100%" stop-color="#e8a858"/></linearGradient></defs>
+        </svg>
+        <div class="ring-center"><div class="ring-val" id="ringVal">0</div><div class="ring-sub">/100</div></div>
+      </div>
+      <div>
+        <div class="ring-verdict" id="resVerdict"></div>
+        <div class="ring-desc" id="resDesc"></div>
+      </div>
+    </div>
+
+    <div class="kpi-grid a3" id="kpiGrid"></div>
+
+    <div class="sec-div a3">Conformité réglementaire détaillée</div>
+    <div class="compliance-grid a3" id="compGrid"></div>
+
+    <div class="sec-div a4">Analyse par dimension RSE</div>
+    <div class="radar-grid a4" id="radarGrid"></div>
+
+    <div class="sec-div a4">Votre plan d'actions personnalisé</div>
+    <div class="actions-list a4" id="actList"></div>
+
+    <div class="cta-box a5">
+      <h3>Passez à l'action avec <em>EcoPilot</em></h3>
+      <p>Suivez vos progrès mensuellement, générez votre rapport VSME en un clic, et impliquez vos équipes avec des tableaux de bord simples et motivants.</p>
+      <button class="btn-cta" onclick="showPage('trial')">Démarrer l'essai gratuit 14 jours →</button><br>
+      <button class="btn-outline" onclick="showPage('dashboard')">Voir le tableau de bord démo</button><br>
+      <button class="btn-outline" onclick="showPage('diag',1)" style="margin-top:8px">Refaire le diagnostic</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     PAGE : DASHBOARD
+══════════════════════════════════════════ -->
+<div class="page" id="page-dashboard">
+  <div class="container-wide">
+    <div class="demo-banner a1">
+      <div class="demo-text"><strong>Mode démonstration</strong> — Données simulées pour illustrer les fonctionnalités EcoPilot</div>
+      <button class="btn-sm" onclick="showPage('trial')">Activer mon compte →</button>
+    </div>
+    <div class="dash-header a2">
+      <div><div class="dash-title">Mon tableau de bord <em>RSE</em></div><div style="font-size:12px;color:var(--text-dim);margin-top:4px">Dernière mise à jour : Mars 2026</div></div>
+      <div class="dash-badge"><span class="pulse-dot"></span>Données en temps réel</div>
+    </div>
+    <div class="dash-grid a3">
+      <div class="dash-kpi"><div class="dk-icon">♻️</div><div class="dk-label">Taux de tri</div><div class="dk-val">73%</div><div class="dk-trend trend-up">▲ +8% vs mois dernier</div></div>
+      <div class="dash-kpi"><div class="dk-icon">🌿</div><div class="dk-label">CO₂ évité / mois</div><div class="dk-val">142 kg</div><div class="dk-trend trend-up">▲ +12% ce mois</div></div>
+      <div class="dash-kpi"><div class="dk-icon">💰</div><div class="dk-label">Économies YTD</div><div class="dk-val">1 240 €</div><div class="dk-trend trend-up">▲ En bonne voie</div></div>
+      <div class="dash-kpi"><div class="dk-icon">⚖️</div><div class="dk-label">Score conformité</div><div class="dk-val">82/100</div><div class="dk-trend trend-up">▲ +5 pts ce mois</div></div>
+    </div>
+    <div class="dash-row a4">
+      <div class="dash-card">
+        <div class="card-title">Volumes recyclés par mois (litres)</div>
+        <div class="month-bars">
+          <div class="m-bar" style="height:45%" data-label="Sep"></div>
+          <div class="m-bar" style="height:52%" data-label="Oct"></div>
+          <div class="m-bar" style="height:48%" data-label="Nov"></div>
+          <div class="m-bar" style="height:61%" data-label="Déc"></div>
+          <div class="m-bar" style="height:55%" data-label="Jan"></div>
+          <div class="m-bar" style="height:68%" data-label="Fév"></div>
+          <div class="m-bar" style="height:73%" data-label="Mar" style="background:linear-gradient(to top,var(--green),#00ff70)"></div>
+        </div>
+      </div>
+      <div class="dash-card">
+        <div class="card-title">Répartition par flux</div>
+        <div class="flux-list">
+          <div class="flux-item"><span class="flux-name">📄 Papier/Carton</span><div class="flux-bar-wrap"><div class="flux-bar-fill" style="width:82%"></div></div><span class="flux-pct">82%</span></div>
+          <div class="flux-item"><span class="flux-name">🥤 Plastique</span><div class="flux-bar-wrap"><div class="flux-bar-fill" style="width:64%"></div></div><span class="flux-pct">64%</span></div>
+          <div class="flux-item"><span class="flux-name">🥗 Biodéchets</span><div class="flux-bar-wrap"><div class="flux-bar-fill" style="width:71%"></div></div><span class="flux-pct">71%</span></div>
+          <div class="flux-item"><span class="flux-name">🥫 Métal</span><div class="flux-bar-wrap"><div class="flux-bar-fill" style="width:55%"></div></div><span class="flux-pct">55%</span></div>
+          <div class="flux-item"><span class="flux-name">💻 DEEE</span><div class="flux-bar-wrap"><div class="flux-bar-fill" style="width:40%"></div></div><span class="flux-pct">40%</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="dash-row a5">
+      <div class="dash-card">
+        <div class="card-title">Alertes & notifications</div>
+        <div class="alert-list">
+          <div class="alert-item alert-u">🔴 Attestation annuelle de valorisation à renouveler avant le 30 avril</div>
+          <div class="alert-item alert-y">🟡 Taux de tri plastique en baisse — vérifier les points de collecte cafétéria</div>
+          <div class="alert-item alert-g">✅ Conformité biodéchets atteinte — objectif AGEC 2024 validé</div>
+          <div class="alert-item alert-g">✅ Rapport VSME Q1 2026 prêt à télécharger</div>
+        </div>
+      </div>
+      <div class="dash-card">
+        <div class="card-title">Progression RSE</div>
+        <div class="flux-list" style="gap:12px">
+          <div><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px"><span style="color:var(--text-dim)">Conformité AGEC</span><span style="color:var(--green);font-weight:700">82%</span></div><div class="chart-bar"><div class="chart-fill" style="width:82%"></div></div></div>
+          <div><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px"><span style="color:var(--text-dim)">Engagement équipes</span><span style="color:var(--gold);font-weight:700">61%</span></div><div class="chart-bar"><div class="chart-fill" style="width:61%;background:linear-gradient(90deg,var(--gold-dim,#a8863a),var(--gold))"></div></div></div>
+          <div><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px"><span style="color:var(--text-dim)">Réduction à la source</span><span style="color:var(--text-dim);font-weight:700">38%</span></div><div class="chart-bar"><div class="chart-fill" style="width:38%;background:linear-gradient(90deg,#4a9eff,#7fc3ff)"></div></div></div>
+          <div><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px"><span style="color:var(--text-dim)">Score VSME déchets</span><span style="color:var(--green);font-weight:700">74%</span></div><div class="chart-bar"><div class="chart-fill" style="width:74%"></div></div></div>
+        </div>
+      </div>
+    </div>
+    <div style="text-align:center;padding:20px 0 8px" class="a6">
+      <button class="btn-big" onclick="showPage('trial')">Activer mon accès complet →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     PAGE : ESSAI GRATUIT
+══════════════════════════════════════════ -->
+<div class="page" id="page-trial">
+  <div class="container-wide">
+    <div class="trial-grid">
+      <div class="trial-left a1">
+        <div class="eyebrow" style="margin-bottom:20px">✦ &nbsp;14 jours offerts, sans carte bancaire</div>
+        <h2><em>EcoPilot</em><br>transforme votre<br>gestion des déchets</h2>
+        <p>Rejoignez les PME françaises qui ont simplifié leur conformité AGEC, amélioré leur score RSE et réduit leurs coûts de gestion des déchets.</p>
+        <div class="plan-cards">
+          <div class="plan">
+            <div class="plan-head"><div class="plan-name">🌱 Starter</div><div class="plan-price">Gratuit <span>pour toujours</span></div></div>
+            <div class="plan-desc">Pour démarrer et explorer</div>
+            <div class="plan-features">
+              <div class="plan-feat">Diagnostic complet illimité</div>
+              <div class="plan-feat">Score RSE & conformité AGEC</div>
+              <div class="plan-feat">3 recommandations personnalisées</div>
+            </div>
+          </div>
+          <div class="plan best">
+            <div class="plan-best-tag">⭐ Recommandé</div>
+            <div class="plan-head"><div class="plan-name">🚀 Pro PME</div><div class="plan-price">89€ <span>/ mois HT</span></div></div>
+            <div class="plan-desc">Pour piloter et progresser</div>
+            <div class="plan-features">
+              <div class="plan-feat">Tableau de bord RSE complet</div>
+              <div class="plan-feat">Suivi mensuel des flux de déchets</div>
+              <div class="plan-feat">Rapport VSME automatique</div>
+              <div class="plan-feat">Alertes réglementaires en temps réel</div>
+              <div class="plan-feat">Accès équipe (jusqu'à 10 utilisateurs)</div>
+              <div class="plan-feat">Export PDF & reporting clients</div>
+            </div>
+          </div>
+          <div class="plan">
+            <div class="plan-head"><div class="plan-name">🏆 Enterprise</div><div class="plan-price">Sur devis</div></div>
+            <div class="plan-desc">Pour les multi-sites et ETI</div>
+            <div class="plan-features">
+              <div class="plan-feat">Tout Pro PME + multi-sites</div>
+              <div class="plan-feat">Intégration TrackDéchets</div>
+              <div class="plan-feat">Accompagnement ISO 14001</div>
+              <div class="plan-feat">API & connecteurs ERP</div>
+            </div>
+          </div>
+        </div>
+        <div class="trust-row">
+          <div class="trust-item">Sans engagement</div>
+          <div class="trust-item">RGPD conforme</div>
+          <div class="trust-item">Support français</div>
+        </div>
+      </div>
+      <div class="a2">
+        <div class="trial-form">
+          <div class="form-title">Démarrer l'essai gratuit</div>
+          <div class="form-row">
+            <div class="form-group"><label class="form-label">Prénom</label><input class="form-input" type="text" placeholder="Gabriel"></div>
+            <div class="form-group"><label class="form-label">Nom</label><input class="form-input" type="text" placeholder="Bidaut"></div>
+          </div>
+          <div class="form-group"><label class="form-label">Email professionnel</label><input class="form-input" type="email" placeholder="gabriel@entreprise.fr"></div>
+          <div class="form-group"><label class="form-label">Nom de l'entreprise</label><input class="form-input" type="text" placeholder="Mon Entreprise SAS"></div>
+          <div class="form-row">
+            <div class="form-group"><label class="form-label">Secteur</label>
+              <select class="form-input" style="cursor:pointer">
+                <option value="">Choisir...</option>
+                <option>Services / Tertiaire</option>
+                <option>Commerce / Distribution</option>
+                <option>Industrie / Logistique</option>
+                <option>BTP / Chantiers</option>
+                <option>Restauration / Alimentaire</option>
+              </select>
+            </div>
+            <div class="form-group"><label class="form-label">Taille</label>
+              <select class="form-input" style="cursor:pointer">
+                <option value="">Choisir...</option>
+                <option>Moins de 10</option>
+                <option>10 à 49</option>
+                <option>50 à 249</option>
+                <option>250+</option>
+              </select>
+            </div>
+          </div>
+          <button class="btn-form" onclick="showPage('success')">Créer mon compte gratuit →</button>
+          <div class="form-note">En créant un compte, vous acceptez les CGU d'EcoPilot.<br>Aucune carte bancaire requise pour l'essai 14 jours.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     PAGE : SUCCESS
+══════════════════════════════════════════ -->
+<div class="page" id="page-success">
+  <div class="container">
+    <div class="success-page">
+      <div class="success-icon a1">✅</div>
+      <h2 class="success-title a2">Bienvenue sur <em>EcoPilot</em> !</h2>
+      <p class="success-sub a3">Votre compte a été créé. Vous allez recevoir un email de confirmation dans quelques instants. Votre essai gratuit de 14 jours commence maintenant.</p>
+      <div class="next-steps a4">
+        <div class="ns"><div class="ns-num">1</div><div class="ns-t">Confirmez votre email</div><div class="ns-d">Cliquez sur le lien reçu pour activer votre accès</div></div>
+        <div class="ns"><div class="ns-num">2</div><div class="ns-t">Complétez votre profil</div><div class="ns-d">Renseignez vos prestataires et vos flux de déchets</div></div>
+        <div class="ns"><div class="ns-num">3</div><div class="ns-t">Suivez vos progrès</div><div class="ns-d">Votre tableau de bord RSE est prêt à l'emploi</div></div>
+      </div>
+      <button class="btn-big a5" onclick="showPage('dashboard')">Accéder à mon tableau de bord →</button>
+    </div>
+  </div>
+</div>
+
+</div><!-- .app -->
+
+<script>
+// ─── ORGANIC NATURE PARTICLES ───
+const cv=document.getElementById('bgCanvas'),cx=cv.getContext('2d');
+let W,H,pts=[];
+function rsz(){W=cv.width=innerWidth;H=cv.height=innerHeight}
+rsz();window.addEventListener('resize',rsz);
+// Types: 0=pollen circle, 1=tiny leaf, 2=seed dot
+class P{
+  constructor(){this.reset(true)}
+  reset(init){
+    this.x=init?Math.random()*W:-20;
+    this.y=init?Math.random()*H:Math.random()*H;
+    this.type=Math.floor(Math.random()*3);
+    this.r=Math.random()*2.5+0.8;
+    this.vx=Math.random()*.4+.1;
+    this.vy=(Math.random()-.5)*.15;
+    this.a=Math.random()*.3+.05;
+    this.ph=Math.random()*Math.PI*2;
+    this.rot=Math.random()*Math.PI*2;
+    this.rotv=(Math.random()-.5)*.02;
+    this.size=Math.random()*3+1.5;
+    this.sw=Math.random()*1.5; // sway width
+    this.sf=Math.random()*.008+.003; // sway freq
+  }
+  upd(){
+    this.x+=this.vx;
+    this.y+=this.vy+Math.sin(this.ph)*this.sw;
+    this.ph+=this.sf;
+    this.rot+=this.rotv;
+    if(this.x>W+20)this.reset(false);
+  }
+  draw(){
+    const a=this.a*(.6+.4*Math.sin(this.ph*2));
+    cx.save();
+    cx.globalAlpha=a;
+    cx.translate(this.x,this.y);
+    cx.rotate(this.rot);
+    if(this.type===0){
+      // Pollen: soft circle with halo
+      const g=cx.createRadialGradient(0,0,0,0,0,this.size*2.5);
+      g.addColorStop(0,'rgba(148,190,70,0.7)');
+      g.addColorStop(0.5,'rgba(148,190,70,0.2)');
+      g.addColorStop(1,'transparent');
+      cx.fillStyle=g;
+      cx.beginPath();cx.arc(0,0,this.size*2.5,0,Math.PI*2);cx.fill();
+      cx.fillStyle='rgba(168,200,90,0.9)';
+      cx.beginPath();cx.arc(0,0,this.size*0.6,0,Math.PI*2);cx.fill();
+    } else if(this.type===1){
+      // Tiny leaf shape
+      cx.fillStyle=`rgba(100,155,40,${a+0.1})`;
+      cx.beginPath();
+      cx.moveTo(0,-this.size*1.8);
+      cx.bezierCurveTo(this.size*1.2,-this.size,this.size*1.2,this.size,0,this.size*1.8);
+      cx.bezierCurveTo(-this.size*1.2,this.size,-this.size*1.2,-this.size,0,-this.size*1.8);
+      cx.fill();
+    } else {
+      // Seed/spore: elongated oval
+      cx.fillStyle=`rgba(140,185,60,${a+0.15})`;
+      cx.beginPath();
+      cx.ellipse(0,0,this.size*.5,this.size*1.6,0,0,Math.PI*2);
+      cx.fill();
+    }
+    cx.restore();
+  }
+}
+for(let i=0;i<70;i++)pts.push(new P());
+function frame(){
+  cx.clearRect(0,0,W,H);
+  pts.forEach(p=>{p.upd();p.draw()});
+  requestAnimationFrame(frame);
+}
+frame();
+
+// ─── STATE ───
+const S={size:null,sector:null,env:null,vol:200,org:null,goal:null,waste:[],freins:[]};
+let curPage='landing';
+
+// ─── NAVIGATION ───
+function showPage(pg,step){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  let id;
+  if(pg==='diag'&&step){id='page-diag-'+step;buildSteps(step)}
+  else if(pg==='results'){id='page-results';buildResults()}
+  else{id='page-'+pg}
+  const el=document.getElementById(id);
+  if(el){el.classList.add('active');window.scrollTo({top:0,behavior:'smooth'})}
+  // progress
+  const map={landing:0,'diag-1':12,'diag-2':25,'diag-3':37,'diag-4':50,'diag-5':62,'diag-6':75,'diag-7':87,'diag-8':95,results:100,dashboard:0,trial:0,success:100};
+  const k=pg==='diag'&&step?'diag-'+step:pg;
+  document.getElementById('progLine').style.width=(map[k]||0)+'%';
+  curPage=id;
+}
+
+function buildSteps(cur){
+  const ids=['st2','st3','st4','st5','st6','st7','st8'];
+  ['st2','st3','st4','st5','st6','st7','st8'].forEach(id=>{
+    const el=document.getElementById(id);if(!el)return;
+    el.innerHTML='';
+  });
+  const tid='st'+cur;
+  const el=document.getElementById(tid);if(!el)return;
+  let html='';
+  for(let i=1;i<=8;i++){
+    const cls=i<cur?'done':i===cur?'on':'';
+    html+=`<div class="step-item"><div class="step-c ${cls}">${i<cur?'✓':i}</div>`;
+    if(i<8)html+=`<div class="step-l ${i<cur?'done':''}"></div>`;
+    html+='</div>';
+  }
+  el.innerHTML=html;
+}
+
+// ─── INPUTS ───
+function pick(el,key,val){
+  el.closest('.opts').querySelectorAll('.opt').forEach(o=>o.classList.remove('sel'));
+  el.classList.add('sel');S[key]=val;
+  const map={size:'n1',sector:'n2',env:'n3',org:'n6',goal:'n8'};
+  const nb=document.getElementById(map[key]);if(nb)nb.disabled=false;
+}
+function tog(el,val){
+  const isFrein=el.closest('#freinChecks')!==null;
+  const arr=isFrein?'freins':'waste';
+  if(val==='none'){document.querySelectorAll('#fluxChecks .chk').forEach(c=>c.classList.remove('on'));S[arr]=[];return;}
+  if(document.querySelector('#fluxChecks .chk:last-child')&&!isFrein){
+    const last=document.querySelectorAll('#fluxChecks .chk');
+    last[last.length-1].classList.remove('on');
+    S.waste=S.waste.filter(v=>v!=='none');
+  }
+  if(el.classList.contains('on')){el.classList.remove('on');S[arr]=S[arr].filter(v=>v!==val)}
+  else{el.classList.add('on');if(!S[arr].includes(val))S[arr].push(val)}
+}
+function updateVol(v){
+  S.vol=parseInt(v);
+  document.getElementById('volDisplay').textContent=v;
+  const info=v<100?'Volume faible — vos obligations de tri restent identiques. Toutes les entreprises sont concernées par la loi AGEC depuis 2024.':
+    v<1100?'Volume standard PME — vous êtes soumis aux 7 flux obligatoires et au tri des biodéchets depuis janvier 2024.':
+    'Volume important — vous devez tenir un registre des déchets, obtenir une attestation annuelle et déclarer via GEREP.';
+  document.getElementById('volInfo').textContent=info;
+}
+updateVol(200);
+
+// ─── SCORE CALC ───
+function calcScore(){
+  let s=10;
+  if(S.org==='basic')s+=15;else if(S.org==='collect')s+=28;else if(S.org==='structured')s+=42;
+  const w=S.waste.filter(v=>v!=='none');s+=Math.min(w.length*8,40);
+  if(S.waste.includes('none'))s=Math.max(s-20,3);
+  if(S.goal==='leader')s=Math.min(s+5,100);
+  return Math.min(s,100);
+}
+
+// ─── BUILD RESULTS ───
+function buildResults(){
+  const sc=calcScore();
+  const w=S.waste.filter(v=>v!=='none');
+
+  // Animate ring
+  setTimeout(()=>{
+    const arc=document.getElementById('scoreArc');
+    const circ=452.4;
+    arc.style.transition='stroke-dashoffset 1.5s cubic-bezier(0.4,0,0.2,1)';
+    arc.style.strokeDashoffset=circ-(sc/100)*circ;
+    let c=0;const iv=setInterval(()=>{c+=1;document.getElementById('ringVal').textContent=Math.min(c,sc);if(c>=sc)clearInterval(iv)},15);
+  },200);
+
+  let verdict,desc,agec,agecCls,rse,rseCls,saves;
+  if(sc<30){verdict='Des bases urgentes à construire';desc="Votre entreprise est exposée à des risques réglementaires significatifs. Plusieurs obligations AGEC ne sont pas respectées. Des actions simples permettent de corriger la situation rapidement.";agec='Non conforme';agecCls='b-red';rse='Débutant';rseCls='b-red';saves='~3 800 €'}
+  else if(sc<55){verdict='Un bon départ à consolider';desc="Des pratiques de tri sont en place, mais des manques importants persistent sur les flux obligatoires ou la traçabilité. Quelques actions ciblées vous mettront en conformité complète.";agec='Partielle';agecCls='b-gold';rse='Intermédiaire';rseCls='b-gold';saves='~2 100 €'}
+  else if(sc<80){verdict='Niveau solide — optimisons ensemble';desc="Votre gestion est structurée et globalement conforme. Les optimisations restantes portent sur la traçabilité, le reporting VSME et l'engagement des équipes.";agec='Conforme';agecCls='b-green';rse='Avancé';rseCls='b-green';saves='~900 €'}
+  else{verdict='Excellence RSE — valorisez votre démarche';desc="Vous faites partie des PME les plus avancées sur la gestion des déchets. L'enjeu est maintenant de formaliser et communiquer cette performance auprès de vos clients et partenaires.";agec='Conforme';agecCls='b-green';rse='Expert';rseCls='b-blue';saves='~400 €'}
+
+  document.getElementById('resHeadTitle').innerHTML=`${sc<30?'Des actions<br>urgentes à prendre':sc<55?'Progressif —<br>complétez votre démarche':sc<80?'Solide — quelques<br>optimisations à saisir':'Bravo — votre niveau<br>RSE est remarquable'}`;
+  document.getElementById('resVerdict').textContent=verdict;
+  document.getElementById('resDesc').textContent=desc;
+
+  // KPIs
+  const kpis=[
+    {ic:'⚖️',lbl:'Conformité AGEC',val:agec,badge:agec==='Non conforme'?'À régulariser':agec==='Partielle'?'À compléter':'Validée',cls:agecCls},
+    {ic:'♻️',lbl:'Flux triés / 7 obligatoires',val:w.length+' / 7',badge:w.length<3?'Insuffisant':w.length<6?'En cours':'Complet',cls:w.length<3?'b-red':w.length<6?'b-gold':'b-green'},
+    {ic:'💰',lbl:'Économies estimées / an',val:saves,badge:'Estimé',cls:'b-blue'},
+    {ic:'🌱',lbl:'Niveau RSE déchets',val:rse,badge:rse,cls:rseCls},
+  ];
+  document.getElementById('kpiGrid').innerHTML=kpis.map(k=>`<div class="kpi-c"><span class="kpi-ic">${k.ic}</span><div class="kpi-bd"><div class="kpi-lbl">${k.lbl}</div><div class="kpi-val">${k.val}</div></div><span class="badge ${k.cls}">${k.badge}</span></div>`).join('');
+
+  // Compliance grid
+  const hasBio=S.waste.includes('bio');
+  const hasPaper=S.waste.includes('paper');
+  const hasCollect=S.org==='collect'||S.org==='structured';
+  const comps=[
+    {ic:'🥗',nm:'Biodéchets (2024)',st:hasBio?'✅ Conforme':'❌ Non conforme',cls:hasBio?'comp-ok':'comp-ko'},
+    {ic:'📄',nm:'Tri 7 flux AGEC',st:w.length>=5?'✅ Complet':w.length>=3?'⚠️ Partiel':'❌ Insuffisant',cls:w.length>=5?'comp-ok':w.length>=3?'comp-mid':'comp-ko'},
+    {ic:'📋',nm:'Attestation annuelle',st:hasCollect?'✅ En place':'❌ Manquante',cls:hasCollect?'comp-ok':'comp-ko'},
+    {ic:'📊',nm:'Registre des déchets',st:S.org==='structured'?'✅ Tenu':'⚠️ À mettre en place',cls:S.org==='structured'?'comp-ok':'comp-mid'},
+    {ic:'🌍',nm:'Reporting VSME',st:sc>=60?'✅ Prêt':'⚠️ Données manquantes',cls:sc>=60?'comp-ok':'comp-mid'},
+    {ic:'🏅',nm:'ISO 14001',st:sc>=80?'✅ Compatible':'⚠️ À préparer',cls:sc>=80?'comp-ok':'comp-mid'},
+  ];
+  document.getElementById('compGrid').innerHTML=comps.map(c=>`<div class="comp-c"><div class="comp-icon">${c.ic}</div><div class="comp-name">${c.nm}</div><div class="comp-status ${c.cls}">${c.st}</div></div>`).join('');
+
+  // Radar
+  const dims=[
+    {nm:'Conformité',score:!hasBio||w.length<5?Math.round(30+sc*.3):Math.round(60+sc*.4),col:'var(--green)'},
+    {nm:'Organisation',score:S.org==='none'?15:S.org==='basic'?35:S.org==='collect'?62:88,col:'var(--gold)'},
+    {nm:'Traçabilité',score:S.org==='structured'?75:S.org==='collect'?42:20,col:'var(--blue)'},
+    {nm:'Engagement',score:Math.round(20+w.length*8),col:'var(--green)'},
+    {nm:'RSE Global',score:Math.min(sc+5,100),col:'var(--gold)'},
+    {nm:'Réduction',score:S.waste.includes('none')?5:Math.round(w.length*10),col:'var(--blue)'},
+  ];
+  document.getElementById('radarGrid').innerHTML=dims.map(d=>`<div class="radar-item"><div class="radar-name">${d.nm}</div><div class="radar-score" style="color:${d.col}">${d.score}</div><div class="radar-bar"><div class="radar-fill" style="width:${d.score}%;background:${d.col}"></div></div></div>`).join('');
+
+  // Actions
+  const actions=[];
+  if(!hasBio)actions.push({p:'a-red',t:'Mettre en place le tri des biodéchets',d:"Obligation légale depuis le 1er janvier 2024 pour toutes les entreprises sans exception. Contact nécessaire avec un prestataire de compostage ou méthanisation.",tag:'⚠️ Obligation AGEC',tc:'tag-u'});
+  if(!hasPaper)actions.push({p:'a-red',t:'Créer des points de collecte papier/carton',d:"Flux le plus volumineux dans les bureaux. Solution simple : un bac dédié par zone + contrat avec un collecteur papier/carton.",tag:'⚠️ Obligation AGEC',tc:'tag-u'});
+  if(w.length<5)actions.push({p:'a-gold',t:'Identifier les flux manquants parmi les 7 obligatoires',d:`Vous triez actuellement ${w.length}/7 flux obligatoires. Chaque flux manquant est un risque de pénalité et une ressource valorisable non exploitée.`,tag:'🎯 Prioritaire',tc:'tag-p'});
+  if(!hasCollect)actions.push({p:'a-gold',t:'Contractualiser avec un prestataire de collecte',d:"Indispensable pour obtenir l'attestation annuelle obligatoire depuis août 2024. Utilisez des plateformes de mise en relation pour trouver un prestataire local.",tag:'🎯 Prioritaire',tc:'tag-p'});
+  if(S.org!=='structured')actions.push({p:'a-gold',t:'Mettre en place un suivi mensuel simple',d:"Un tableur ou un outil dédié (comme EcoPilot) permet de suivre vos flux, préparer votre reporting VSME et mesurer vos progrès.",tag:'📊 RSE',tc:'tag-p'});
+  if(S.freins.includes('engagement'))actions.push({p:'a-green',t:'Afficher les résultats du tri en temps réel',d:"Des indicateurs visuels simples (volumes recyclés, CO₂ évité) augmentent l'adhésion des équipes de 30 % en moyenne.",tag:'✨ Quick win',tc:'tag-w'});
+  actions.push({p:'a-green',t:'Générer votre rapport VSME déchets',d:"Avec les données collectées, vous pouvez produire automatiquement les indicateurs déchets nécessaires à votre déclaration VSME — un atout pour vos appels d'offres.",tag:'✨ Valeur RSE',tc:'tag-w'});
+  const top=actions.slice(0,5);
+  document.getElementById('actList').innerHTML=top.map((a,i)=>`<div class="act ${a.p}" style="animation:fadeUp 0.4s ${.1+i*.1}s ease both;opacity:0"><div class="act-num">${i+1}</div><div class="act-b"><div class="act-t">${a.t}</div><div class="act-d">${a.d}</div><span class="act-tag ${a.tc}">${a.tag}</span></div></div>`).join('');
+}
+
+// init
+buildSteps(1);
+
+// Mobile menu
+function toggleMenu(){
+  const m=document.getElementById('mobileMenu');
+  m.style.display=m.style.display==='flex'?'none':'flex';
+}
+document.addEventListener('click',e=>{
+  const btn=document.getElementById('menuBtn');
+  const menu=document.getElementById('mobileMenu');
+  if(btn&&menu&&!btn.contains(e.target)&&!menu.contains(e.target)){
+    menu.style.display='none';
+  }
+});
+</script>
+</body>
+</html>
